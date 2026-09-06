@@ -8,26 +8,31 @@ const PORT = process.env.SERVER_PORT || 8080;
 const HOST = process.env.SERVER_HOST || 'localhost';
 const ENTIRE_CLI_PATH = process.env.ENTIRE_CLI_PATH || "C:\\Users\\KAUSHAL K\\scoop\\shims\\entire.exe";
 
+let activeRepoPath = process.cwd();
+
 // DYNAMIC REPOSITORY PROVIDER VIA LOCAL GIT
-function getDynamicRepoInfo() {
-    let localPath = process.cwd();
+function getDynamicRepoInfo(targetPath = activeRepoPath) {
+    let localPath = targetPath;
     let currentBranch = "main";
     let gitStatus = "clean";
-    let remoteUrl = "https://github.com/KAUSHALK123/cli_BTW.git";
-    let owner = "KAUSHALK123";
-    let repoName = "cli_BTW";
+    let remoteUrl = "";
+    let owner = "workspace";
+    let repoName = path.basename(targetPath);
 
     try {
-        const topLevel = execSync('git rev-parse --show-toplevel', { encoding: 'utf8', timeout: 3000 });
-        if (topLevel) localPath = topLevel.trim();
+        const topLevel = execSync('git rev-parse --show-toplevel', { cwd: targetPath, encoding: 'utf8', timeout: 3000 });
+        if (topLevel) {
+            localPath = topLevel.trim();
+            repoName = path.basename(localPath);
+        }
 
-        const branch = execSync('git rev-parse --abbrev-ref HEAD', { encoding: 'utf8', timeout: 3000 });
+        const branch = execSync('git rev-parse --abbrev-ref HEAD', { cwd: targetPath, encoding: 'utf8', timeout: 3000 });
         if (branch) currentBranch = branch.trim();
 
-        const statusOut = execSync('git status --porcelain', { encoding: 'utf8', timeout: 3000 });
+        const statusOut = execSync('git status --porcelain', { cwd: targetPath, encoding: 'utf8', timeout: 3000 });
         gitStatus = statusOut.trim() ? `modified (${statusOut.trim().split('\n').length} files)` : "clean";
 
-        const remoteOut = execSync('git remote get-url origin', { encoding: 'utf8', timeout: 3000 });
+        const remoteOut = execSync('git remote get-url origin', { cwd: targetPath, encoding: 'utf8', timeout: 3000 });
         if (remoteOut) {
             remoteUrl = remoteOut.trim();
             const match = remoteUrl.match(/github\.com[:/]([^/]+)\/([^/.]+)/);
@@ -37,14 +42,14 @@ function getDynamicRepoInfo() {
             }
         }
     } catch (e) {
-        console.warn('Git inspection warning:', e.message);
+        console.warn('Git inspection warning for', targetPath, ':', e.message);
     }
 
     return {
         id: `repo-${owner.toLowerCase()}-${repoName.toLowerCase()}`,
         name: repoName,
         owner: owner,
-        url: `https://github.com/${owner}/${repoName}`,
+        url: remoteUrl ? `https://github.com/${owner}/${repoName}` : `file://${localPath}`,
         local_path: localPath,
         default_branch: "main",
         current_branch: currentBranch,
@@ -54,22 +59,75 @@ function getDynamicRepoInfo() {
     };
 }
 
+// DYNAMIC REPOSITORY FILES LISTING
+function getRepoFiles(targetPath = activeRepoPath) {
+    try {
+        const out = execSync('git ls-files', { cwd: targetPath, encoding: 'utf8', timeout: 4000 });
+        const files = out.trim().split('\n').filter(f => f.trim().length > 0);
+        if (files.length > 0) return files;
+    } catch (e) {
+        // Fallback to fs inspection
+    }
+
+    try {
+        return fs.readdirSync(targetPath).filter(f => !f.startsWith('.') && !f.includes('node_modules'));
+    } catch (err) {
+        return [];
+    }
+}
+
+// DYNAMIC FILE CONTENT READER
+function getFileContent(targetPath = activeRepoPath, relativePath) {
+    if (!relativePath) return { error: "Path parameter is required" };
+    
+    // Resolve absolute path
+    const resolvedTarget = path.resolve(targetPath);
+    const fullPath = path.resolve(resolvedTarget, relativePath);
+
+    if (!fs.existsSync(fullPath)) {
+        return { error: `File not found: ${relativePath}` };
+    }
+
+    try {
+        const stats = fs.statSync(fullPath);
+        if (stats.isDirectory()) {
+            return { error: `Target path is a directory: ${relativePath}` };
+        }
+        if (stats.size > 2000000) {
+            return { error: `File too large to render: ${stats.size} bytes` };
+        }
+
+        const content = fs.readFileSync(fullPath, 'utf8');
+        const ext = path.extname(fullPath).toLowerCase();
+        return {
+            path: relativePath,
+            full_path: fullPath,
+            extension: ext,
+            size_bytes: stats.size,
+            lines_count: content.split('\n').length,
+            content: content
+        };
+    } catch (e) {
+        return { error: `Failed to read file: ${e.message}` };
+    }
+}
+
 // DYNAMIC COMMITS PROVIDER VIA GIT LOG
-function getRecentCommits(limit = 10) {
+function getRecentCommits(targetPath = activeRepoPath, limit = 15) {
     try {
         const gitLogCmd = `git log -n ${limit} --format="%H|%h|%s|%an|%ae|%aI"`;
-        const logOut = execSync(gitLogCmd, { encoding: 'utf8', timeout: 5000 });
+        const logOut = execSync(gitLogCmd, { cwd: targetPath, encoding: 'utf8', timeout: 5000 });
         if (!logOut.trim()) return [];
 
         return logOut.trim().split('\n').map(line => {
             const [sha, short_sha, message, author_name, author_email, timestamp] = line.split('|');
             let files_changed = [];
             try {
-                const filesOut = execSync(`git show ${sha} --name-only --oneline`, { encoding: 'utf8', timeout: 2000 });
+                const filesOut = execSync(`git show ${sha} --name-only --oneline`, { cwd: targetPath, encoding: 'utf8', timeout: 2000 });
                 const lines = filesOut.trim().split('\n');
                 files_changed = lines.slice(1).filter(f => f.trim().length > 0);
             } catch (e) {
-                files_changed = ["repository files"];
+                files_changed = ["modified files"];
             }
 
             return {
@@ -89,14 +147,14 @@ function getRecentCommits(limit = 10) {
 }
 
 // DYNAMIC ENTIRE CLI PROVIDER
-function getEntireCLIStatus() {
+function getEntireCLIStatus(targetPath = activeRepoPath) {
     let isInstalled = false;
     let version = "Unavailable";
     let isEnabled = false;
     let cliStatusRaw = "";
 
     try {
-        const verOut = execSync(`"${ENTIRE_CLI_PATH}" --version`, { encoding: 'utf8', timeout: 3000 });
+        const verOut = execSync(`"${ENTIRE_CLI_PATH}" --version`, { cwd: targetPath, encoding: 'utf8', timeout: 3000 });
         if (verOut) {
             isInstalled = true;
             version = verOut.trim();
@@ -107,7 +165,7 @@ function getEntireCLIStatus() {
 
     if (isInstalled) {
         try {
-            const statusOut = execSync(`"${ENTIRE_CLI_PATH}" status`, { encoding: 'utf8', timeout: 4000 });
+            const statusOut = execSync(`"${ENTIRE_CLI_PATH}" status`, { cwd: targetPath, encoding: 'utf8', timeout: 4000 });
             cliStatusRaw = statusOut.trim();
             if (cliStatusRaw.includes("Enabled")) {
                 isEnabled = true;
@@ -117,8 +175,8 @@ function getEntireCLIStatus() {
         }
     }
 
-    const repoInfo = getDynamicRepoInfo();
-    const realCheckpoints = getRealCheckpoints();
+    const repoInfo = getDynamicRepoInfo(targetPath);
+    const realCheckpoints = getRealCheckpoints(targetPath);
 
     return {
         installed: isInstalled,
@@ -127,7 +185,7 @@ function getEntireCLIStatus() {
         cli_path: ENTIRE_CLI_PATH,
         active_branch: repoInfo.current_branch,
         checkpoints_count: realCheckpoints.length,
-        graph_status: checkEntireGraphAvailable() ? "AVAILABLE" : "UNINDEXED",
+        graph_status: checkEntireGraphAvailable(targetPath) ? "AVAILABLE" : "UNINDEXED",
         readiness_score: isInstalled && isEnabled ? 95 : 40,
         status_message: isInstalled 
             ? (isEnabled ? "Entire CLI connected & active for workspace repository" : "Entire CLI installed but disabled")
@@ -136,15 +194,14 @@ function getEntireCLIStatus() {
 }
 
 // REAL CHECKPOINTS RETRIEVAL VIA CLI
-function getRealCheckpoints() {
+function getRealCheckpoints(targetPath = activeRepoPath) {
     try {
-        const cpOut = execSync(`"${ENTIRE_CLI_PATH}" checkpoint list`, { encoding: 'utf8', timeout: 4000 });
+        const cpOut = execSync(`"${ENTIRE_CLI_PATH}" checkpoint list`, { cwd: targetPath, encoding: 'utf8', timeout: 4000 });
         const output = cpOut.trim();
         if (!output || output.includes("No checkpoints found")) {
             return [];
         }
         
-        // Parse checkpoint list lines if any
         const lines = output.split('\n').filter(l => l.trim() && !l.startsWith('ID') && !l.includes('branch') && !l.includes('checkpoints'));
         return lines.map((line, idx) => {
             const parts = line.trim().split(/\s+/);
@@ -163,19 +220,19 @@ function getRealCheckpoints() {
 }
 
 // DIAGNOSTICS VIEWER EXECUTION
-function getEntireCLIDiagnostics() {
+function getEntireCLIDiagnostics(targetPath = activeRepoPath) {
     let statusText = "$ entire status\nEntire CLI not detected.";
     let checkpointListText = "$ entire checkpoint list\nNo checkpoint data available.";
 
     try {
-        const outStatus = execSync(`"${ENTIRE_CLI_PATH}" status`, { encoding: 'utf8', timeout: 4000 });
+        const outStatus = execSync(`"${ENTIRE_CLI_PATH}" status`, { cwd: targetPath, encoding: 'utf8', timeout: 4000 });
         statusText = `$ entire status\n${outStatus.trim()}`;
     } catch (e) {
         statusText = `$ entire status\n${e.message}`;
     }
 
     try {
-        const outCp = execSync(`"${ENTIRE_CLI_PATH}" checkpoint list`, { encoding: 'utf8', timeout: 4000 });
+        const outCp = execSync(`"${ENTIRE_CLI_PATH}" checkpoint list`, { cwd: targetPath, encoding: 'utf8', timeout: 4000 });
         checkpointListText = `$ entire checkpoint list\n${outCp.trim()}`;
     } catch (e) {
         checkpointListText = `$ entire checkpoint list\n${e.message}`;
@@ -189,13 +246,13 @@ function getEntireCLIDiagnostics() {
 }
 
 // DYNAMIC GRAPH CHECK
-function checkEntireGraphAvailable() {
-    const graphPath = path.join(process.cwd(), '.entire', 'graph-agent.md');
+function checkEntireGraphAvailable(targetPath = activeRepoPath) {
+    const graphPath = path.join(targetPath, '.entire', 'graph-agent.md');
     return fs.existsSync(graphPath);
 }
 
-function getGraphFindings() {
-    if (!checkEntireGraphAvailable()) {
+function getGraphFindings(targetPath = activeRepoPath) {
+    if (!checkEntireGraphAvailable(targetPath)) {
         return [{
             id: "graph-unindexed",
             query_change: "Workspace Graph",
@@ -205,29 +262,29 @@ function getGraphFindings() {
         }];
     }
 
-    const recentCommits = getRecentCommits(1);
-    const topCommit = recentCommits[0] || { short_sha: "a81c92f" };
+    const recentCommits = getRecentCommits(targetPath, 1);
+    const topCommit = recentCommits[0] || { short_sha: "HEAD", files_changed: ["source files"] };
     return [{
         id: "finding-1",
         query_change: `Commit ${topCommit.short_sha} AST Call Graph`,
-        affected_files: topCommit.files_changed || ["server.js", "app/frontend/app.js"],
-        risk_information: `AST Call Graph Index: ${topCommit.files_changed ? topCommit.files_changed.length : 2} files modified in recent commit session.`,
+        affected_files: topCommit.files_changed || ["modified files"],
+        risk_information: `AST Call Graph Index: ${topCommit.files_changed ? topCommit.files_changed.length : 0} files modified in recent commit session.`,
         verification_status: "VERIFIED"
     }];
 }
 
 // DYNAMIC INTELLIGENCE PIPELINE
-function getDynamicIntelligenceObj(sha) {
-    const repoInfo = getDynamicRepoInfo();
-    const commits = getRecentCommits(5);
+function getDynamicIntelligenceObj(targetPath = activeRepoPath, sha) {
+    const repoInfo = getDynamicRepoInfo(targetPath);
+    const commits = getRecentCommits(targetPath, 5);
     const targetCommit = (sha ? commits.find(c => c.sha === sha || c.short_sha === sha) : null) || commits[0] || {
-        sha: "a81c92f459625609cc7b202ea123456789abcdef",
-        short_sha: "a81c92f",
-        message: "feat: current workspace development session",
-        files_changed: ["server.js", "app/frontend/app.js"]
+        sha: "HEAD",
+        short_sha: "HEAD",
+        message: "Current workspace development session",
+        files_changed: getRepoFiles(targetPath).slice(0, 3)
     };
 
-    const realCheckpoints = getRealCheckpoints();
+    const realCheckpoints = getRealCheckpoints(targetPath);
     const hasCP = realCheckpoints.length > 0;
     const cp = hasCP ? realCheckpoints[0] : null;
 
@@ -238,7 +295,7 @@ function getDynamicIntelligenceObj(sha) {
         requirement_id: "REQ-LIVE",
         requirement_title: repoInfo.description,
         intent: targetCommit.message || "Execute repository development tasks",
-        implemented: targetCommit.files_changed.map(f => `Modified ${f} in commit ${targetCommit.short_sha}`),
+        implemented: (targetCommit.files_changed || []).map(f => `Modified ${f} in commit ${targetCommit.short_sha}`),
         incomplete: hasCP ? [] : ["Entire session checkpoint transcript unavailable for this commit (Git-only history)."],
         evidence: {
             checkpoint: { 
@@ -253,17 +310,17 @@ function getDynamicIntelligenceObj(sha) {
             },
             source: { 
                 available: true, 
-                summary: `${targetCommit.files_changed.length} source file(s) modified`, 
-                details: targetCommit.files_changed.join(', ') 
+                summary: `${targetCommit.files_changed ? targetCommit.files_changed.length : 0} source file(s) modified`, 
+                details: (targetCommit.files_changed || []).join(', ') 
             },
             tests: { 
                 available: true, 
                 summary: "AST & System Verification Ready", 
-                details: "Verified against local Git repository tree" 
+                details: `Verified against local Git repository tree (${repoInfo.name})` 
             },
             graph: { 
-                available: checkEntireGraphAvailable(), 
-                summary: checkEntireGraphAvailable() ? "Entire Graph AST Index Active" : "Graph Unindexed" 
+                available: checkEntireGraphAvailable(targetPath), 
+                summary: checkEntireGraphAvailable(targetPath) ? "Entire Graph AST Index Active" : "Graph Unindexed" 
             }
         },
         next_action: hasCP ? "Verify milestone requirements against checkpoint transcript." : "Run 'entire enable' to begin capturing agent session checkpoints.",
@@ -277,6 +334,7 @@ function getDynamicIntelligenceObj(sha) {
 const server = http.createServer((req, res) => {
     const parsedUrl = url.parse(req.url, true);
     const reqPath = parsedUrl.pathname;
+    const query = parsedUrl.query;
 
     // CORS Headers
     res.setHeader('Access-Control-Allow-Origin', '*');
@@ -295,14 +353,65 @@ const server = http.createServer((req, res) => {
         res.end(JSON.stringify({
             status: "ok",
             timestamp: new Date().toISOString(),
-            version: "1.5.0",
+            version: "1.6.0",
+            active_repo: activeRepoPath,
             service: "Real Entire Checkpoint Intelligence Application Server"
         }));
         return;
     }
 
+    if (reqPath === '/api/select-repository' && req.method === 'POST') {
+        let body = '';
+        req.on('data', chunk => body += chunk.toString());
+        req.on('end', () => {
+            try {
+                const data = JSON.parse(body);
+                if (data.repoPath && fs.existsSync(data.repoPath)) {
+                    activeRepoPath = path.resolve(data.repoPath);
+                    res.writeHead(200, { 'Content-Type': 'application/json' });
+                    res.end(JSON.stringify({
+                        status: "success",
+                        message: `Active repository updated to ${activeRepoPath}`,
+                        repo: getDynamicRepoInfo(activeRepoPath)
+                    }));
+                } else {
+                    res.writeHead(400, { 'Content-Type': 'application/json' });
+                    res.end(JSON.stringify({ error: "Invalid repository path or directory does not exist" }));
+                }
+            } catch (e) {
+                res.writeHead(400, { 'Content-Type': 'application/json' });
+                res.end(JSON.stringify({ error: e.message }));
+            }
+        });
+        return;
+    }
+
+    if (reqPath === '/api/files') {
+        const files = getRepoFiles(activeRepoPath);
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({
+            repo: getDynamicRepoInfo(activeRepoPath),
+            files_count: files.length,
+            files: files
+        }));
+        return;
+    }
+
+    if (reqPath === '/api/file-content') {
+        const fileRelPath = query.path || query.file;
+        const result = getFileContent(activeRepoPath, fileRelPath);
+        if (result.error) {
+            res.writeHead(400, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify(result));
+        } else {
+            res.writeHead(200, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify(result));
+        }
+        return;
+    }
+
     if (reqPath === '/api/readiness') {
-        const entireStatus = getEntireCLIStatus();
+        const entireStatus = getEntireCLIStatus(activeRepoPath);
         res.writeHead(200, { 'Content-Type': 'application/json' });
         res.end(JSON.stringify({
             entire_installed: entireStatus.installed,
@@ -319,19 +428,19 @@ const server = http.createServer((req, res) => {
 
     if (reqPath === '/api/entire/status') {
         res.writeHead(200, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify(getEntireCLIStatus()));
+        res.end(JSON.stringify(getEntireCLIStatus(activeRepoPath)));
         return;
     }
 
     if (reqPath === '/api/entire/diagnostics') {
         res.writeHead(200, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify(getEntireCLIDiagnostics()));
+        res.end(JSON.stringify(getEntireCLIDiagnostics(activeRepoPath)));
         return;
     }
 
     if (reqPath === '/api/entire/activity') {
-        const repo = getDynamicRepoInfo();
-        const cps = getRealCheckpoints();
+        const repo = getDynamicRepoInfo(activeRepoPath);
+        const cps = getRealCheckpoints(activeRepoPath);
         res.writeHead(200, { 'Content-Type': 'application/json' });
         res.end(JSON.stringify({
             connected: true,
@@ -339,7 +448,7 @@ const server = http.createServer((req, res) => {
             branch: repo.current_branch,
             latest_checkpoint: cps[0] || null,
             checkpoints_count: cps.length,
-            graph_status: checkEntireGraphAvailable() ? "AVAILABLE" : "UNINDEXED",
+            graph_status: checkEntireGraphAvailable(activeRepoPath) ? "AVAILABLE" : "UNINDEXED",
             polled_at: new Date().toISOString()
         }));
         return;
@@ -348,7 +457,7 @@ const server = http.createServer((req, res) => {
     if ((reqPath === '/api/enable' || reqPath === '/api/entire/enable') && req.method === 'POST') {
         let enableMsg = "Entire CLI enabled for repository.";
         try {
-            const out = execSync(`"${ENTIRE_CLI_PATH}" enable`, { encoding: 'utf8', timeout: 5000 });
+            const out = execSync(`"${ENTIRE_CLI_PATH}" enable`, { cwd: activeRepoPath, encoding: 'utf8', timeout: 5000 });
             enableMsg = out.trim() || enableMsg;
         } catch (e) {
             enableMsg = `CLI enable output: ${e.message}`;
@@ -363,18 +472,17 @@ const server = http.createServer((req, res) => {
 
     if (reqPath === '/api/repositories') {
         res.writeHead(200, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify([getDynamicRepoInfo()]));
+        res.end(JSON.stringify([getDynamicRepoInfo(activeRepoPath)]));
         return;
     }
 
     if (reqPath === '/api/repositories/active' || reqPath.startsWith('/api/repositories/repo-')) {
         res.writeHead(200, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify(getDynamicRepoInfo()));
+        res.end(JSON.stringify(getDynamicRepoInfo(activeRepoPath)));
         return;
     }
 
     if (reqPath.includes('/milestones')) {
-        // Return clear status for GitHub Milestones
         res.writeHead(200, { 'Content-Type': 'application/json' });
         res.end(JSON.stringify([]));
         return;
@@ -386,9 +494,9 @@ const server = http.createServer((req, res) => {
         const targetSHA = (shaIdx > 0 && parts[shaIdx]) ? parts[shaIdx] : null;
 
         if (reqPath.endsWith('/context')) {
-            const commits = getRecentCommits(1);
+            const commits = getRecentCommits(activeRepoPath, 1);
             const targetCommit = commits[0] || { sha: "HEAD", short_sha: "HEAD", message: "Recent commit" };
-            const cps = getRealCheckpoints();
+            const cps = getRealCheckpoints(activeRepoPath);
             res.writeHead(200, { 'Content-Type': 'application/json' });
             res.end(JSON.stringify({
                 commit: targetCommit,
@@ -402,35 +510,35 @@ const server = http.createServer((req, res) => {
 
         if (reqPath.endsWith('/intelligence')) {
             res.writeHead(200, { 'Content-Type': 'application/json' });
-            res.end(JSON.stringify(getDynamicIntelligenceObj(targetSHA)));
+            res.end(JSON.stringify(getDynamicIntelligenceObj(activeRepoPath, targetSHA)));
             return;
         }
 
         res.writeHead(200, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify(getRecentCommits(10)));
+        res.end(JSON.stringify(getRecentCommits(activeRepoPath, 15)));
         return;
     }
 
     if (reqPath.includes('/intelligence')) {
         res.writeHead(200, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify(getDynamicIntelligenceObj()));
+        res.end(JSON.stringify(getDynamicIntelligenceObj(activeRepoPath)));
         return;
     }
 
     if (reqPath.includes('/checkpoints')) {
         res.writeHead(200, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify(getRealCheckpoints()));
+        res.end(JSON.stringify(getRealCheckpoints(activeRepoPath)));
         return;
     }
 
     if (reqPath.includes('/graph')) {
         res.writeHead(200, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify(getGraphFindings()));
+        res.end(JSON.stringify(getGraphFindings(activeRepoPath)));
         return;
     }
 
     if (reqPath.includes('/handoff')) {
-        const commits = getRecentCommits(1);
+        const commits = getRecentCommits(activeRepoPath, 1);
         const topCommit = commits[0] || { message: "Current development task" };
         res.writeHead(200, { 'Content-Type': 'application/json' });
         res.end(JSON.stringify({
@@ -489,6 +597,8 @@ server.listen(PORT, HOST, () => {
     console.log("====================================================");
     console.log(` Server URL:  http://${HOST}:${PORT}`);
     console.log(` REST API:    http://${HOST}:${PORT}/api/health`);
+    console.log(` Active Repo: ${activeRepoPath}`);
     console.log(` Dashboard:   http://${HOST}:${PORT}/`);
     console.log("====================================================");
 });
+
