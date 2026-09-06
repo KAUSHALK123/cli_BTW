@@ -87,6 +87,25 @@ export interface HandoffItem {
     recommended_next_action: string;
 }
 
+export interface ImpactAnalysisItem {
+    checkpoint_id: string;
+    commit_sha: string;
+    changed_areas: string[];
+    affected_files: string[];
+    affected_functions: string[];
+    callers: string[];
+    dependents: string[];
+    related_routes: string[];
+    related_tests: string[];
+    risks: string[];
+    graph_findings: GraphFindingItem[];
+    source_verification: string;
+    test_verification: string;
+    context_completeness: string; // "COMPLETE" | "INCOMPLETE" | "REDACTED" | "UNAVAILABLE"
+    verification_status: string;  // "PARTIALLY_VERIFIED" | "FULLY_VERIFIED"
+    available_evidence: string[];
+    missing_evidence: string[];
+    analysis_conclusion: string;
 export interface EvidenceItem {
     available: boolean;
     summary: string;
@@ -165,15 +184,19 @@ export class CheckpointApiClient {
         return this.fetchJson<GraphFindingItem[]>(`/api/repositories/${repoId}/graph`);
     }
 
+    public async getImpactAnalysis(repoId: string = 'repo-cli-btw', sha: string = '', checkpointId: string = ''): Promise<ImpactAnalysisItem> {
+        return this.fetchJson<ImpactAnalysisItem>(`/api/repositories/${repoId}/impact?sha=${sha}&checkpoint_id=${checkpointId}`);
+    }
+
     public async getHandoff(repoId: string = 'repo-cli-btw'): Promise<HandoffItem> {
         return this.fetchJson<HandoffItem>(`/api/repositories/${repoId}/handoff`);
     }
 
     private fetchJson<T>(path: string, method: string = 'GET'): Promise<T> {
         return new Promise((resolve, reject) => {
-            const req = http.request(`${this.baseUrl}${path}`, { method }, (res) => {
+            const req = http.request(`${this.baseUrl}${path}`, { method }, (res: any) => {
                 let data = '';
-                res.on('data', chunk => data += chunk);
+                res.on('data', (chunk: any) => data += chunk);
                 res.on('end', () => {
                     try {
                         resolve(JSON.parse(data));
@@ -182,7 +205,7 @@ export class CheckpointApiClient {
                     }
                 });
             });
-            req.on('error', (err) => reject(err));
+            req.on('error', (err: any) => reject(err));
             req.end();
         });
     }
