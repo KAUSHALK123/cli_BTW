@@ -3,257 +3,361 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Entire Checkpoint Intelligence Dashboard</title>
+    <title>Checkpoint Intelligence — Entire Developer Intelligence</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500;600;700&family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="style.css">
 </head>
-<body>
-    <div class="app-container">
-        <!-- Sidebar Navigation -->
-        <aside class="sidebar">
-            <div class="brand">
-                <div class="logo-icon">⚡</div>
-                <div class="brand-text">
-                    <h2>Entire Intelligence</h2>
-                    <span class="badge">Checkpoints v1.0</span>
-                </div>
+<body class="dark-theme">
+    <!-- TOP HEADER BAR -->
+    <header class="top-navbar">
+        <div class="nav-left">
+            <div class="brand-logo">
+                <span class="logo-spark">⚡</span>
+                <span class="brand-name">Checkpoint Intelligence</span>
+                <span class="version-tag">v1.4.2</span>
+            </div>
+            
+            <div class="view-mode-toggle">
+                <button class="mode-btn active" id="btn-vscode-view">
+                    <span class="btn-icon">💻</span> VS Code Extension View
+                </button>
+                <button class="mode-btn" id="btn-web-view">
+                    <span class="btn-icon">🌐</span> Web Intelligence Workspace
+                </button>
+            </div>
+        </div>
+
+        <div class="nav-center">
+            <div class="global-search-box">
+                <span class="search-icon">🔍</span>
+                <input type="text" id="global-search-input" placeholder="Search symbols, checkpoints (Cmd+K)..." readonly />
+                <kbd class="shortcut-kbd">⌘K</kbd>
+            </div>
+        </div>
+
+        <div class="nav-right">
+            <button class="btn btn-verify-action" id="btn-run-verification">
+                <span class="play-icon">▷</span> Run Verification
+            </button>
+            <div class="runner-status-chip">
+                <span class="status-pulse green"></span>
+                <span class="runner-text">ACTIVE RUNNER: LIVE AST VERIFIER</span>
+            </div>
+            <div class="target-file-badge">
+                Target: <code id="active-target-file">auth/middleware.go</code>
+            </div>
+        </div>
+    </header>
+
+    <!-- INTERACTIVE DEMO PIPELINE BREADCRUMB -->
+    <nav class="pipeline-breadcrumb-bar">
+        <div class="pipeline-label">INTERACTIVE DEMO PIPELINE:</div>
+        <div class="pipeline-steps">
+            <button class="step-btn" data-step="1">1. Architecture</button>
+            <span class="step-arrow">›</span>
+            <button class="step-btn" data-step="2">2. Milestone</button>
+            <span class="step-arrow">›</span>
+            <button class="step-btn" data-step="3">3. Timeline</button>
+            <span class="step-arrow">›</span>
+            <button class="step-btn active" data-step="4">4. Intent vs Impl</button>
+            <span class="step-arrow">›</span>
+            <button class="step-btn" data-step="5">5. Graph Impact</button>
+            <span class="step-arrow">›</span>
+            <button class="step-btn" data-step="6">6. Handoff</button>
+            <span class="step-arrow">›</span>
+            <button class="step-btn pulse" data-step="7">7. Context Sim</button>
+        </div>
+    </nav>
+
+    <!-- MAIN 3-COLUMN WORKSPACE AREA -->
+    <div class="workspace-layout">
+        
+        <!-- LEFT COLUMN: CHECKPOINT EXPLORER -->
+        <aside class="column explorer-column">
+            <!-- FAR LEFT ICON STRIP -->
+            <div class="icon-nav-strip">
+                <button class="strip-icon active" title="Graph Impact" id="nav-icon-graph">🕸️<span class="strip-label">Graph</span></button>
+                <button class="strip-icon" title="Verification Matrix" id="nav-icon-verify">✓<span class="strip-label">Verify</span></button>
+                <button class="strip-icon" title="AST Nodes" id="nav-icon-ast">🌳<span class="strip-label">AST</span></button>
+                <button class="strip-icon" title="Timeline & Commits" id="nav-icon-timeline">⏱️<span class="strip-label">Timeline</span></button>
+                <button class="strip-icon" title="Handoff" id="nav-icon-handoff">🤝<span class="strip-label">Handoff</span></button>
             </div>
 
-            <nav class="nav-menu">
-                <button class="nav-item active" data-tab="overview">
-                    <span class="icon">📊</span> Overview & Workspace
-                </button>
-                <button class="nav-item" data-tab="intelligence">
-                    <span class="icon">⚡</span> Checkpoint Intelligence
-                </button>
-                <button class="nav-item" data-tab="architecture">
-                    <span class="icon">🏗️</span> Architecture
-                </button>
-                <button class="nav-item" data-tab="checkpoints">
-                    <span class="icon">🔖</span> Entire Checkpoints
-                </button>
-                <button class="nav-item" data-tab="requirements">
-                    <span class="icon">📋</span> Requirements Matrix
-                </button>
-                <button class="nav-item" data-tab="graph">
-                    <span class="icon">🕸️</span> Entire Graph Impact
-                </button>
-                <button class="nav-item" data-tab="handoff">
-                    <span class="icon">🤝</span> Handoff Package
-                </button>
-            </nav>
+            <!-- MAIN EXPLORER CONTENT -->
+            <div class="explorer-content">
+                <div class="column-header">
+                    <span class="header-title">CHECKPOINT EXPLORER</span>
+                    <div class="header-actions">
+                        <button class="icon-action-btn" id="btn-refresh-explorer" title="Refresh">🔄</button>
+                    </div>
+                </div>
 
-            <div class="system-status">
-                <div class="status-indicator online"></div>
-                <div class="status-info">
-                    <span class="status-title">API Foundation</span>
-                    <span class="status-sub" id="health-status">Checking REST API...</span>
+                <!-- REPOSITORY CONTEXT TREE -->
+                <div class="explorer-section">
+                    <div class="section-title">
+                        <span>REPOSITORY CONTEXT</span>
+                        <span class="branch-tag">GIT: MAIN</span>
+                    </div>
+                    <ul class="file-tree" id="repo-file-tree">
+                        <li class="tree-item dir"><span class="item-icon">📁</span> cmd/gateway</li>
+                        <li class="tree-item file active"><span class="item-icon">📄</span> <span class="file-name">auth/middleware.go</span> <span class="file-badge">M4</span></li>
+                        <li class="tree-item file"><span class="item-icon">📄</span> <span class="file-name">auth/token.go</span></li>
+                        <li class="tree-item file"><span class="item-icon">📄</span> <span class="file-name">tests/auth_test.go</span></li>
+                    </ul>
+                </div>
+
+                <!-- MILESTONE REQUIREMENTS -->
+                <div class="explorer-section">
+                    <div class="section-title">
+                        <span>MILESTONE REQUIREMENTS</span>
+                        <span class="status-count success" id="verified-count-badge">3/5 VERIFIED</span>
+                    </div>
+                    <div class="requirements-list" id="explorer-req-list">
+                        <div class="req-item pass" id="req-card-4">
+                            <div class="req-header">
+                                <span class="req-id">REQ-04: API Authentication</span>
+                                <span class="req-pct pass">60% PASS</span>
+                            </div>
+                            <div class="req-desc">Protect gateway routes with RS256 JWT validation & refresh revocation.</div>
+                        </div>
+                        <div class="req-item queued" id="req-card-5">
+                            <div class="req-header">
+                                <span class="req-id">REQ-05: Rate Limiting</span>
+                                <span class="req-pct queued">QUEUED</span>
+                            </div>
+                            <div class="req-desc">Token bucket rate limiting for protected endpoints.</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ACTIVE CHECKPOINTS -->
+                <div class="explorer-section">
+                    <div class="section-title">
+                        <span>ACTIVE CHECKPOINTS</span>
+                        <span class="node-tag">GRAPH NODE</span>
+                    </div>
+                    <div class="checkpoint-card-list" id="explorer-checkpoint-list">
+                        <div class="checkpoint-explorer-card">
+                            <div class="cp-top">
+                                <span class="cp-id-code">81M1-ckp-892f</span>
+                                <span class="cp-status-chip pass">PASSED</span>
+                            </div>
+                            <div class="cp-sub">Commit: <code id="explorer-cp-commit">a81c92f</code> (AST Verified)</div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </aside>
 
-        <!-- Main Content Area -->
-        <main class="main-content">
-            <header class="top-header">
-                <div class="header-title">
-                    <h1 id="page-title">Workspace Repository Overview</h1>
-                    <p class="subtitle">Preserving intent, structural graph evidence, and risk analysis across checkpoints</p>
+        <!-- CENTER COLUMN: CODE EDITOR & INLINE LENS -->
+        <main class="column code-editor-column">
+            <!-- TAB BAR -->
+            <div class="editor-tabs-bar">
+                <div class="tab active"><span class="tab-code-icon">&lt;&gt;</span> auth/middleware.go <span class="tab-close">×</span></div>
+                <div class="tab"><span class="tab-code-icon">&lt;&gt;</span> tests/auth_test.go</div>
+            </div>
+
+            <!-- BREADCRUMB & METADATA BAR -->
+            <div class="editor-meta-bar">
+                <div class="meta-path">
+                    <code>checkpoint-core</code> &gt; <code>auth</code> &gt; <code>middleware.go</code> &gt; <strong id="active-symbol-name">AuthMiddleware()</strong>
                 </div>
-                <div class="repo-selector">
-                    <span class="label">Active Workspace:</span>
-                    <select id="repo-select">
-                        <option value="">Loading repositories...</option>
-                    </select>
-                    <button class="btn btn-primary" id="btn-open-add-modal">+ Add Repository</button>
+                <div class="meta-badges">
+                    <span class="meta-badge purple">Checkpoint Ref: <strong id="meta-cp-ref">81M1-ckp-892f</strong></span>
+                    <span class="meta-badge green">AST Node: Linked</span>
+                    <span class="meta-badge gray">Go 1.22.4</span>
                 </div>
-            </header>
+            </div>
 
-            <div class="content-body">
-                <!-- Tab 1: Overview -->
-                <section id="tab-overview" class="tab-pane active">
-                    <div class="metrics-grid">
-                        <div class="metric-card glass">
-                            <div class="metric-header">
-                                <span>Release Readiness</span>
-                                <span class="metric-badge success">GRADE A</span>
-                            </div>
-                            <div class="metric-value">95<span class="total">/100</span></div>
-                            <div class="metric-footer">Production Ready</div>
+            <!-- CODE VIEW WITH INLINE LENS OVERLAY -->
+            <div class="code-view-container">
+                <pre class="code-editor-pre"><code><span class="line"><span class="ln">1</span> <span class="kw">package</span> auth</span>
+<span class="line"><span class="ln">2</span> </span>
+<span class="line"><span class="ln">3</span> <span class="kw">import</span> (</span>
+<span class="line"><span class="ln">4</span>     <span class="str">"net/http"</span></span>
+<span class="line"><span class="ln">5</span>     <span class="str">"github.com/golang-jwt/jwt/v5"</span></span>
+<span class="line"><span class="ln">6</span> )</span>
+<span class="line"><span class="ln">7</span> </span></code></pre>
+
+                <!-- CHECKPOINT INTELLIGENCE INLINE LENS CARD -->
+                <div class="inline-lens-card" id="inline-lens-overlay">
+                    <div class="lens-header">
+                        <div class="lens-title">
+                            <span class="lens-spark">⚛</span>
+                            <strong>CHECKPOINT INTELLIGENCE INLINE LENS</strong>
                         </div>
-
-                        <div class="metric-card glass">
-                            <div class="metric-header">
-                                <span>Active Checkpoints</span>
-                            </div>
-                            <div class="metric-value" id="checkpoint-count">2</div>
-                            <div class="metric-footer">Across current branch history</div>
-                        </div>
-
-                        <div class="metric-card glass">
-                            <div class="metric-header">
-                                <span>Requirements Verified</span>
-                            </div>
-                            <div class="metric-value">100<span class="total">%</span></div>
-                            <div class="metric-footer">All prompt goals satisfied</div>
+                        <div class="lens-meta">
+                            <span class="lens-tag">Milestone #4 Verification</span>
+                            <span class="lens-tag purple">Impact: 12 Routes Exposed</span>
+                            <button class="lens-inspect-btn" id="btn-inspect-node">Inspect Node →</button>
                         </div>
                     </div>
+                    <div class="lens-body">
+                        <div class="lens-row verified">
+                            <span class="row-icon">✓</span>
+                            <span class="row-label">Implemented:</span>
+                            <span class="row-val">RS256 Signature verification using public keystore</span>
+                        </div>
+                        <div class="lens-row pending">
+                            <span class="row-icon">⚠</span>
+                            <span class="row-label">Pending:</span>
+                            <span class="row-val">Refresh-token rotation ('/api/v1/auth/refresh') is</span>
+                        </div>
+                        <div class="lens-row gap">
+                            <span class="row-label-gap">Gap:</span>
+                            <span class="row-val">unmapped in AST graph</span>
+                        </div>
+                    </div>
+                </div>
 
-                    <!-- Integration Readiness Section -->
-                    <div class="card glass margin-top">
-                        <h3>Integration & Readiness Status</h3>
-                        <div class="readiness-grid" id="integration-status-grid">
-                            <div class="spinner">Checking integration readiness...</div>
-                        </div>
-                    </div>
-
-                    <!-- Repository Baseline Card -->
-                    <div class="card glass margin-top">
-                        <h3>Active Repository Details</h3>
-                        <div class="details-grid" id="repo-details">
-                            <div class="spinner">Loading repository baseline...</div>
-                        </div>
-                    </div>
-                </section>
-
-                <!-- Tab: Checkpoint Intelligence HERO View -->
-                <section id="tab-intelligence" class="tab-pane">
-                    <div class="card glass hero-intel-card">
-                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
-                            <div>
-                                <h3 style="margin: 0;">Checkpoint Intelligence Engine</h3>
-                                <p style="margin-top: 4px; color: var(--text-secondary); font-size: 0.9rem;">Synthesizing Entire Checkpoints, Git commits, source tree diffs, unit tests, and structural graph evidence</p>
-                            </div>
-                            <div class="commit-selector-box">
-                                <label style="font-size: 0.85rem; color: var(--text-secondary); margin-right: 8px;">Select Commit / Checkpoint:</label>
-                                <select id="intel-commit-select" style="padding: 6px 12px; border-radius: 4px; background: rgba(30, 41, 59, 0.8); color: var(--text-primary); border: 1px solid var(--border-color);">
-                                    <option value="">Loading history...</option>
-                                </select>
-                            </div>
-                        </div>
-                        <div id="intelligence-hero-content">
-                            <div class="spinner">Generating evidence-oriented Checkpoint Intelligence...</div>
-                        </div>
-                    </div>
-                </section>
-
-                <!-- Tab: Architecture -->
-                <section id="tab-architecture" class="tab-pane">
-                    <div class="card glass">
-                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
-                            <h3 style="margin: 0;">Repository Architecture Summary</h3>
-                            <button id="regenerate-arch-btn" style="padding: 8px 16px; border-radius: 4px; background: var(--accent-blue); color: white; border: none; cursor: pointer;">Regenerate</button>
-                        </div>
-                        <div id="architecture-content">
-                            <div class="spinner">Loading architecture analysis...</div>
-                        </div>
-                    </div>
-                </section>
-
-                <!-- Tab 2: Checkpoints -->
-                <section id="tab-checkpoints" class="tab-pane">
-                    <div class="card glass">
-                        <h3>Preserved Entire Checkpoints</h3>
-                        <div class="table-container">
-                            <table class="data-table">
-                                <thead>
-                                    <tr>
-                                        <th>Checkpoint ID</th>
-                                        <th>Commit Ref</th>
-                                        <th>Timestamp</th>
-                                        <th>Intent / Prompt Context</th>
-                                        <th>Verification State</th>
-                                    </tr>
-                                </thead>
-                                <tbody id="checkpoints-table-body">
-                                    <tr><td colspan="5" class="text-center">Loading checkpoints...</td></tr>
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
-                </section>
-
-                <!-- Tab 3: Requirements -->
-                <section id="tab-requirements" class="tab-pane">
-                    <div class="card glass" style="margin-bottom: 20px;">
-                        <h3>🎯 GitHub Milestones</h3>
-                        <div id="milestones-container" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px; margin-top: 12px;">
-                            <div class="spinner">Loading GitHub milestones...</div>
-                        </div>
-                    </div>
-                    <div class="card glass">
-                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
-                            <h3 style="margin: 0;">Requirement & Issue Verification Matrix</h3>
-                            <span id="selected-milestone-title" style="color: var(--accent-blue); font-weight: 500; font-size: 0.9rem;"></span>
-                        </div>
-                        <div class="table-container">
-                            <table class="data-table">
-                                <thead>
-                                    <tr>
-                                        <th>GitHub Reference</th>
-                                        <th>Requirement Title & Goal</th>
-                                        <th>Milestone</th>
-                                        <th>State</th>
-                                        <th>Labels</th>
-                                        <th>Action</th>
-                                    </tr>
-                                </thead>
-                                <tbody id="requirements-table-body">
-                                    <tr><td colspan="6" class="text-center">Loading requirements...</td></tr>
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
-                </section>
-
-                <!-- Tab 4: Graph -->
-                <section id="tab-graph" class="tab-pane">
-                    <div class="card glass">
-                        <h3>Entire Graph Structural Findings & Impact Analysis</h3>
-                        <div id="graph-findings-list">
-                            <div class="spinner">Loading graph findings...</div>
-                        </div>
-                    </div>
-                </section>
-
-                <!-- Tab 5: Handoff -->
-                <section id="tab-handoff" class="tab-pane">
-                    <div class="card glass">
-                        <h3>Agent & Developer Handoff Package</h3>
-                        <div id="handoff-content">
-                            <div class="spinner">Loading handoff briefing...</div>
-                        </div>
-                    </div>
-                </section>
+                <!-- CODE CONTINUATION -->
+                <pre class="code-editor-pre"><code><span class="line"><span class="ln">8</span> <span class="kw">func</span> <span class="fn">AuthMiddleware</span>(next http.<span class="type">Handler</span>) http.<span class="type">Handler</span> {</span>
+<span class="line"><span class="ln">9</span>     <span class="kw">return</span> http.<span class="fn">HandlerFunc</span>(<span class="kw">func</span>(w http.<span class="type">ResponseWriter</span>, r *http.<span class="type">Request</span>) {</span>
+<span class="line"><span class="ln">10</span>         tokenString := <span class="fn">extractBearerToken</span>(r)</span>
+<span class="line annotation-line"><span class="ln">11</span>         claims, err := <span class="fn">ValidateToken</span>(tokenString) <span class="graph-annotation-tag">[Graph Finding: 12 downstream callers]</span></span>
+<span class="line"><span class="ln">12</span>         <span class="kw">if</span> err != <span class="kw">nil</span> {</span>
+<span class="line"><span class="ln">13</span>             w.<span class="fn">WriteHeader</span>(http.StatusUnauthorized)</span>
+<span class="line"><span class="ln">14</span>             <span class="kw">return</span></span>
+<span class="line"><span class="ln">15</span>         }</span>
+<span class="line comment-line"><span class="ln">16</span>         <span class="cmt">// Missing revocation cache check before context injection</span></span>
+<span class="line"><span class="ln">17</span>         ctx := context.<span class="fn">WithValue</span>(r.Context(), <span class="str">"user_claims"</span>, claims)</span>
+<span class="line"><span class="ln">18</span>         next.<span class="fn">ServeHTTP</span>(w, r.<span class="fn">WithContext</span>(ctx))</span>
+<span class="line"><span class="ln">19</span>     })</span>
+<span class="line"><span class="ln">20</span> }</span></code></pre>
             </div>
         </main>
-    </div>
 
-    <!-- Add Repository Modal -->
-    <div class="modal-overlay" id="add-repo-modal">
-        <div class="modal-box glass">
-            <div class="modal-header">
-                <h3>Add New GitHub Repository</h3>
-                <button class="close-btn" id="btn-close-modal">&times;</button>
+        <!-- RIGHT COLUMN: CHECKPOINT REASONING INSPECTOR -->
+        <aside class="column inspector-column">
+            <div class="column-header">
+                <span class="header-title">CHECKPOINT REASONING INSPECTOR</span>
+                <span class="version-tag font-mono">v1.4.2</span>
             </div>
-            <form id="add-repo-form">
-                <div class="form-group">
-                    <label for="repo-url-input">GitHub Repository URL / Name</label>
-                    <input type="text" id="repo-url-input" placeholder="e.g. https://github.com/owner/repo or owner/repo" required>
-                    <span class="hint">Accepts GitHub HTTPS, SSH, or owner/repo shorthand</span>
+
+            <div class="inspector-scroll-area">
+                <!-- CONTEXT SIMULATION MODE TOGGLE -->
+                <div class="context-sim-card glass">
+                    <div class="sim-header">CONTEXT SIMULATION MODE:</div>
+                    <div class="sim-toggle-buttons">
+                        <button class="sim-btn active-complete" id="btn-mode-complete">
+                            ✓ COMPLETE CONTEXT
+                        </button>
+                        <button class="sim-btn" id="btn-mode-incomplete">
+                            ⚠ INCOMPLETE CONTEXT
+                        </button>
+                    </div>
+                    <div class="confidence-banner">
+                        <div class="confidence-text">
+                            <span class="confidence-icon">✓</span>
+                            <span id="sim-confidence-desc">High confidence ✓ Full AST graph symbols, prompt origins, passing tests, runtime telemetry accessible.</span>
+                        </div>
+                        <span class="confidence-score-chip" id="sim-confidence-score">CONFIDENCE: 98.4%</span>
+                    </div>
                 </div>
-                <div class="form-group">
-                    <label for="local-path-input">Local Path (Optional)</label>
-                    <input type="text" id="local-path-input" placeholder="e.g. . or d:\projects\repo">
+
+                <!-- CURRENT FILE & REQUIREMENT -->
+                <div class="inspector-card">
+                    <div class="inspector-section-label">CURRENT FILE & REQUIREMENT</div>
+                    <div class="current-target-title" id="inspector-file-req">
+                        auth/middleware.go &gt; Authentication
+                    </div>
+                    <div class="sub-target-info">
+                        <span class="badge blue">M4: 3/5 Verified</span>
+                    </div>
                 </div>
-                <div class="error-banner" id="modal-error" style="display:none;"></div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" id="btn-cancel-modal">Cancel</button>
-                    <button type="submit" class="btn btn-primary">Add Repository</button>
+
+                <!-- DECLARED INTENT -->
+                <div class="inspector-card">
+                    <div class="inspector-section-label">📌 DECLARED INTENT</div>
+                    <div class="intent-quote-box" id="inspector-intent-text">
+                        "Implement authentication for protected API routes"
+                    </div>
                 </div>
-            </form>
-        </div>
+
+                <!-- IMPLEMENTED & VERIFIED -->
+                <div class="inspector-card">
+                    <div class="inspector-section-label text-green">✓ IMPLEMENTED & VERIFIED</div>
+                    <ul class="verified-list" id="inspector-implemented-list">
+                        <li><span class="check-icon">✓</span> Authentication middleware structure</li>
+                        <li><span class="check-icon">✓</span> JWT validation with RS256 algorithm</li>
+                        <li><span class="check-icon">✓</span> Login endpoint exposed: <code>/api/v1/auth/login</code></li>
+                    </ul>
+                </div>
+
+                <!-- INCOMPLETE / UNRESOLVED GAPS -->
+                <div class="inspector-card warning-border" id="inspector-gaps-card">
+                    <div class="inspector-section-label text-warning">❌ INCOMPLETE / UNRESOLVED GAPS</div>
+                    <ul class="gaps-list" id="inspector-incomplete-list">
+                        <li><span class="cross-icon">✗</span> Refresh-token flow (<code>/api/v1/auth/refresh</code>) missing token revocation storage handler.</li>
+                    </ul>
+                </div>
+
+                <!-- EVIDENCE MATRIX -->
+                <div class="inspector-card">
+                    <div class="inspector-section-label">🔍 EVIDENCE MATRIX</div>
+                    <div class="evidence-matrix-grid" id="inspector-evidence-grid">
+                        <div class="evidence-box">
+                            <span class="box-title">CHECKPOINT</span>
+                            <span class="box-val text-purple" id="ev-cp-val">81M1-ckp-892f</span>
+                        </div>
+                        <div class="evidence-box">
+                            <span class="box-title">COMMIT SHA</span>
+                            <span class="box-val font-mono" id="ev-commit-val">a81c92f [verified]</span>
+                        </div>
+                        <div class="evidence-box">
+                            <span class="box-title">UNIT TESTS</span>
+                            <span class="box-val text-green" id="ev-tests-val">3/3 Passing (tests/auth_test.go)</span>
+                        </div>
+                        <div class="evidence-box">
+                            <span class="box-title">GRAPH AST NODE</span>
+                            <span class="box-val text-blue" id="ev-graph-val">Linked: 14 downstream</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- RECOMMENDED NEXT ACTION -->
+                <div class="inspector-card highlight-card">
+                    <div class="inspector-section-label text-blue">➔ RECOMMENDED NEXT ACTION:</div>
+                    <div class="next-action-text" id="inspector-next-action">
+                        Implement refresh-token handling and token blacklist revocation.
+                    </div>
+                </div>
+
+                <!-- ENTIRE GRAPH IMPACT ANALYSIS -->
+                <div class="inspector-card graph-impact-box">
+                    <div class="graph-impact-header">
+                        <span class="impact-title">🕸️ ENTIRE GRAPH IMPACT ANALYSIS</span>
+                        <span class="severity-chip high" id="graph-severity-badge">SEVERITY: HIGH</span>
+                    </div>
+
+                    <div class="ast-callchain-diagram">
+                        <div class="ast-node root font-mono">
+                            <span>Σ ValidateToken()</span>
+                            <span class="node-badge">Source Verified</span>
+                        </div>
+                        <div class="ast-arrow">↓ calls</div>
+                        <div class="ast-node target font-mono">
+                            <span>🔒 AuthMiddleware()</span>
+                            <span class="node-badge blue">Gateway Interceptor</span>
+                        </div>
+                        <div class="ast-arrow">↓ downstream (12 routes)</div>
+                        <div class="ast-downstream-list">
+                            <div class="downstream-item high-risk">
+                                <span>/api/v1/billing (4 endpoints)</span>
+                                <span class="risk-badge font-mono">High Risk</span>
+                            </div>
+                            <div class="downstream-item medium-risk">
+                                <span>/api/v1/users (6 endpoints)</span>
+                                <span class="risk-badge font-mono">Medium</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </aside>
     </div>
 
     <script src="app.js"></script>
