@@ -53,6 +53,26 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
+    const curveballBtn = document.getElementById('btn-demo-curveball');
+    if (curveballBtn) {
+        curveballBtn.addEventListener('click', () => {
+            // Switch to intelligence tab
+            navItems.forEach(i => i.classList.remove('active'));
+            tabPanes.forEach(p => p.classList.remove('active'));
+
+            const intelTabBtn = document.querySelector('.nav-item[data-tab="intelligence"]');
+            if (intelTabBtn) intelTabBtn.classList.add('active');
+            const activePane = document.getElementById('tab-intelligence');
+            if (activePane) activePane.classList.add('active');
+            if (pageTitle) pageTitle.textContent = tabTitles['intelligence'];
+
+            // Trigger Redacted Context fetch (SHA: 78f4dc59700e)
+            const selectEl = document.getElementById('intel-commit-select');
+            if (selectEl) selectEl.value = '78f4dc59700e9876543210fedcba09876543210f';
+            fetchIntelligence(currentRepoID || 'repo-kaushalk123-cli-btw', '78f4dc59700e');
+        });
+    }
+
     const closeModal = () => addRepoModal.classList.remove('active');
     if (btnCloseModal) btnCloseModal.addEventListener('click', closeModal);
     if (btnCancelModal) btnCancelModal.addEventListener('click', closeModal);

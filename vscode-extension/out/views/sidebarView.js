@@ -1,30 +1,53 @@
-import * as vscode from 'vscode';
-import { CheckpointApiClient } from '../client';
-
-export class CheckpointSidebarViewProvider implements vscode.WebviewViewProvider {
-    public static readonly viewType = 'checkpoint-intelligence-sidebar';
-    private _view?: vscode.WebviewView;
-    private _selectedSha: string = '3dbdf8b83c39'; // Default active commit
-
-    constructor(
-        private readonly _extensionUri: vscode.Uri,
-        private readonly _apiClient: CheckpointApiClient
-    ) {}
-
-    public resolveWebviewView(
-        webviewView: vscode.WebviewView,
-        context: vscode.WebviewViewResolveContext,
-        _token: vscode.CancellationToken
-    ) {
+"use strict";
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    var desc = Object.getOwnPropertyDescriptor(m, k);
+    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
+      desc = { enumerable: true, get: function() { return m[k]; } };
+    }
+    Object.defineProperty(o, k2, desc);
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
+var __importStar = (this && this.__importStar) || (function () {
+    var ownKeys = function(o) {
+        ownKeys = Object.getOwnPropertyNames || function (o) {
+            var ar = [];
+            for (var k in o) if (Object.prototype.hasOwnProperty.call(o, k)) ar[ar.length] = k;
+            return ar;
+        };
+        return ownKeys(o);
+    };
+    return function (mod) {
+        if (mod && mod.__esModule) return mod;
+        var result = {};
+        if (mod != null) for (var k = ownKeys(mod), i = 0; i < k.length; i++) if (k[i] !== "default") __createBinding(result, mod, k[i]);
+        __setModuleDefault(result, mod);
+        return result;
+    };
+})();
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.CheckpointSidebarViewProvider = void 0;
+const vscode = __importStar(require("vscode"));
+class CheckpointSidebarViewProvider {
+    constructor(_extensionUri, _apiClient) {
+        this._extensionUri = _extensionUri;
+        this._apiClient = _apiClient;
+        this._selectedSha = '3dbdf8b83c39'; // Default active commit
+    }
+    resolveWebviewView(webviewView, context, _token) {
         this._view = webviewView;
-
         webviewView.webview.options = {
             enableScripts: true,
             localResourceRoots: [this._extensionUri]
         };
-
         this.updateHtml();
-
         webviewView.webview.onDidReceiveMessage(async (message) => {
             switch (message.type) {
                 case 'refresh':
@@ -50,12 +73,10 @@ export class CheckpointSidebarViewProvider implements vscode.WebviewViewProvider
             }
         });
     }
-
-    public async updateHtml() {
+    async updateHtml() {
         if (!this._view) {
             return;
         }
-
         try {
             const readiness = await this._apiClient.getReadiness();
             const reqs = await this._apiClient.getRequirements();
@@ -64,9 +85,9 @@ export class CheckpointSidebarViewProvider implements vscode.WebviewViewProvider
             const graph = await this._apiClient.getGraphFindings();
             const handoff = await this._apiClient.getHandoff();
             const intel = await this._apiClient.getIntelligence(this._selectedSha);
-
             this._view.webview.html = this.getHtmlForWebview(readiness, reqs, checkpoints, commits, graph, handoff, intel);
-        } catch (error) {
+        }
+        catch (error) {
             this._view.webview.html = `
                 <!DOCTYPE html>
                 <html>
@@ -81,30 +102,25 @@ export class CheckpointSidebarViewProvider implements vscode.WebviewViewProvider
             `;
         }
     }
-
-    private getHtmlForWebview(readiness: any, reqs: any[], checkpoints: any[], commits: any[], graph: any[], handoff: any, intel: any): string {
+    getHtmlForWebview(readiness, reqs, checkpoints, commits, graph, handoff, intel) {
         const completenessColor = intel && intel.context_completeness === 'COMPLETE' ? '#10b981' : (intel && intel.context_completeness === 'REDACTED' ? '#a855f7' : '#f59e0b');
         const verificationColor = intel && intel.verification_status === 'COMPLETED' ? '#10b981' : (intel && intel.verification_status === 'PARTIALLY_VERIFIED' ? '#3b82f6' : '#f59e0b');
-
         const evidenceCheckpoint = intel && intel.evidence && intel.evidence.checkpoint ? (intel.evidence.checkpoint.available ? '✓ Checkpoint' : '✗ Checkpoint') : '✗ Checkpoint';
         const evidenceCommit = intel && intel.evidence && intel.evidence.commit ? (intel.evidence.commit.available ? '✓ Commit' : '✗ Commit') : '✗ Commit';
         const evidenceSource = intel && intel.evidence && intel.evidence.source ? (intel.evidence.source.available ? '✓ Source' : '✗ Source') : '✗ Source';
         const evidenceTests = intel && intel.evidence && intel.evidence.tests ? (intel.evidence.tests.available ? '✓ Tests' : '✗ Tests') : '✗ Tests';
         const evidenceGraph = intel && intel.evidence && intel.evidence.graph ? (intel.evidence.graph.available ? '✓ Graph' : '✗ Graph') : '✗ Graph';
-
         const commitOptions = commits.map(c => `
             <option value="${c.short_sha}" ${this._selectedSha.includes(c.short_sha) ? 'selected' : ''}>
                 ${c.short_sha} - ${c.message.substring(0, 30)}...
             </option>
         `).join('');
-
         const graphRows = graph.map(g => `
             <div style="font-size: 0.8em; margin-bottom: 6px; padding: 4px; border-left: 2px solid #60a5fa; background: var(--vscode-sideBar-background);">
                 <strong>${g.query_change}</strong><br/>
                 <span style="color: var(--vscode-descriptionForeground);">Files: ${g.affected_files.join(', ')}</span>
             </div>
         `).join('');
-
         return `
             <!DOCTYPE html>
             <html lang="en">
@@ -148,14 +164,14 @@ export class CheckpointSidebarViewProvider implements vscode.WebviewViewProvider
                     <div style="font-size: 0.85em; margin-bottom: 6px;">
                         <strong>✓ IMPLEMENTED:</strong>
                         <ul style="margin: 2px 0 0 14px; padding: 0;">
-                            ${intel && intel.implemented ? intel.implemented.map((i: string) => `<li>${i}</li>`).join('') : '<li>Source tree diffs</li>'}
+                            ${intel && intel.implemented ? intel.implemented.map((i) => `<li>${i}</li>`).join('') : '<li>Source tree diffs</li>'}
                         </ul>
                     </div>
 
                     <div style="font-size: 0.85em; margin-bottom: 6px; color: #f59e0b;">
                         <strong>✗ INCOMPLETE:</strong>
                         <ul style="margin: 2px 0 0 14px; padding: 0;">
-                            ${intel && intel.incomplete ? intel.incomplete.map((i: string) => `<li>${i}</li>`).join('') : '<li>None</li>'}
+                            ${intel && intel.incomplete ? intel.incomplete.map((i) => `<li>${i}</li>`).join('') : '<li>None</li>'}
                         </ul>
                     </div>
 
@@ -207,3 +223,6 @@ export class CheckpointSidebarViewProvider implements vscode.WebviewViewProvider
         `;
     }
 }
+exports.CheckpointSidebarViewProvider = CheckpointSidebarViewProvider;
+CheckpointSidebarViewProvider.viewType = 'checkpoint-intelligence-sidebar';
+//# sourceMappingURL=sidebarView.js.map

@@ -138,9 +138,9 @@ export class CheckpointApiClient {
 
     private fetchJson<T>(path: string, method: string = 'GET'): Promise<T> {
         return new Promise((resolve, reject) => {
-            const req = http.request(`${this.baseUrl}${path}`, { method }, (res) => {
+            const req = http.request(`${this.baseUrl}${path}`, { method }, (res: any) => {
                 let data = '';
-                res.on('data', chunk => data += chunk);
+                res.on('data', (chunk: any) => data += chunk);
                 res.on('end', () => {
                     try {
                         resolve(JSON.parse(data));
@@ -149,7 +149,7 @@ export class CheckpointApiClient {
                     }
                 });
             });
-            req.on('error', (err) => reject(err));
+            req.on('error', (err: any) => reject(err));
             req.end();
         });
     }
