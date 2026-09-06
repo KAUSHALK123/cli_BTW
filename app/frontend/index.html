@@ -176,21 +176,31 @@
 
                 <!-- Tab 3: Requirements -->
                 <section id="tab-requirements" class="tab-pane">
+                    <div class="card glass" style="margin-bottom: 20px;">
+                        <h3>🎯 GitHub Milestones</h3>
+                        <div id="milestones-container" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px; margin-top: 12px;">
+                            <div class="spinner">Loading GitHub milestones...</div>
+                        </div>
+                    </div>
                     <div class="card glass">
-                        <h3>Requirement & Milestone Verification Matrix</h3>
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+                            <h3 style="margin: 0;">Requirement & Issue Verification Matrix</h3>
+                            <span id="selected-milestone-title" style="color: var(--accent-blue); font-weight: 500; font-size: 0.9rem;"></span>
+                        </div>
                         <div class="table-container">
                             <table class="data-table">
                                 <thead>
                                     <tr>
-                                        <th>ID</th>
-                                        <th>Title & Goal</th>
-                                        <th>Status</th>
-                                        <th>Related Checkpoints</th>
-                                        <th>Verification Evidence</th>
+                                        <th>GitHub Reference</th>
+                                        <th>Requirement Title & Goal</th>
+                                        <th>Milestone</th>
+                                        <th>State</th>
+                                        <th>Labels</th>
+                                        <th>Action</th>
                                     </tr>
                                 </thead>
                                 <tbody id="requirements-table-body">
-                                    <tr><td colspan="5" class="text-center">Loading requirements...</td></tr>
+                                    <tr><td colspan="6" class="text-center">Loading requirements...</td></tr>
                                 </tbody>
                             </table>
                         </div>

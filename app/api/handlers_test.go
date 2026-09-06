@@ -146,3 +146,64 @@ func TestAPIErrorFormat(t *testing.T) {
 		t.Errorf("expected message 'Invalid parameter supplied', got %s", errResp.Error.Message)
 	}
 }
+
+func TestMilestonesHandler(t *testing.T) {
+	handler := NewAPIHandler(nil)
+
+	// GET /api/repositories/repo-btw-cli/milestones
+	req := httptest.NewRequest("GET", "/api/repositories/repo-btw-cli/milestones", nil)
+	rec := httptest.NewRecorder()
+	handler.RepositoriesHandler(rec, req)
+
+	if rec.Code != http.StatusOK {
+		t.Fatalf("expected 200 OK for milestones endpoint, got %d", rec.Code)
+	}
+
+	var milestones []models.Milestone
+	if err := json.Unmarshal(rec.Body.Bytes(), &milestones); err != nil {
+		t.Fatalf("failed to parse milestones JSON: %v", err)
+	}
+	if len(milestones) == 0 {
+		t.Fatalf("expected non-empty list of milestones")
+	}
+
+	// GET /api/repositories/repo-btw-cli/milestones/2/issues
+	reqIssues := httptest.NewRequest("GET", "/api/repositories/repo-btw-cli/milestones/2/issues", nil)
+	recIssues := httptest.NewRecorder()
+	handler.RepositoriesHandler(recIssues, reqIssues)
+
+	if recIssues.Code != http.StatusOK {
+		t.Fatalf("expected 200 OK for milestone issues endpoint, got %d", recIssues.Code)
+	}
+
+	var reqs []models.Requirement
+	if err := json.Unmarshal(recIssues.Body.Bytes(), &reqs); err != nil {
+		t.Fatalf("failed to parse milestone issues JSON: %v", err)
+	}
+	if len(reqs) == 0 {
+		t.Fatalf("expected non-empty list of issues for milestone 2")
+	}
+}
+
+func TestSingleRequirementHandler(t *testing.T) {
+	handler := NewAPIHandler(nil)
+
+	// GET /api/repositories/repo-btw-cli/requirements/6
+	req := httptest.NewRequest("GET", "/api/repositories/repo-btw-cli/requirements/6", nil)
+	rec := httptest.NewRecorder()
+	handler.RepositoriesHandler(rec, req)
+
+	if rec.Code != http.StatusOK {
+		t.Fatalf("expected 200 OK for requirement #6, got %d", rec.Code)
+	}
+
+	var requirement models.Requirement
+	if err := json.Unmarshal(rec.Body.Bytes(), &requirement); err != nil {
+		t.Fatalf("failed to parse requirement JSON: %v", err)
+	}
+
+	if requirement.GitHubIssueNumber != 6 {
+		t.Errorf("expected GitHubIssueNumber 6, got %d", requirement.GitHubIssueNumber)
+	}
+}
+

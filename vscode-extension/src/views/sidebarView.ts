@@ -1,5 +1,5 @@
 import * as vscode from 'vscode';
-import { CheckpointApiClient } from '../client';
+import { CheckpointApiClient, MilestoneItem, RequirementItem } from '../client';
 
 export class CheckpointSidebarViewProvider implements vscode.WebviewViewProvider {
     public static readonly viewType = 'checkpoint-intelligence-sidebar';
@@ -37,6 +37,11 @@ export class CheckpointSidebarViewProvider implements vscode.WebviewViewProvider
                 case 'openDashboard':
                     vscode.env.openExternal(vscode.Uri.parse('http://localhost:8080'));
                     break;
+                case 'openGitHubUrl':
+                    if (message.url) {
+                        vscode.env.openExternal(vscode.Uri.parse(message.url));
+                    }
+                    break;
             }
         });
     }
@@ -48,12 +53,13 @@ export class CheckpointSidebarViewProvider implements vscode.WebviewViewProvider
 
         try {
             const readiness = await this._apiClient.getReadiness();
+            const milestones = await this._apiClient.getMilestones();
             const reqs = await this._apiClient.getRequirements();
             const checkpoints = await this._apiClient.getCheckpoints();
             const commits = await this._apiClient.getCommits();
             const intel = await this._apiClient.getIntelligence();
 
-            this._view.webview.html = this.getHtmlForWebview(readiness, reqs, checkpoints, commits, intel);
+            this._view.webview.html = this.getHtmlForWebview(readiness, milestones, reqs, checkpoints, commits, intel);
         } catch (error) {
             this._view.webview.html = `
                 <!DOCTYPE html>
@@ -68,7 +74,7 @@ export class CheckpointSidebarViewProvider implements vscode.WebviewViewProvider
         }
     }
 
-    private getHtmlForWebview(readiness: any, reqs: any[], checkpoints: any[], commits: any[], intel: any): string {
+    private getHtmlForWebview(readiness: any, milestones: MilestoneItem[], reqs: RequirementItem[], checkpoints: any[], commits: any[], intel: any): string {
         const completenessColor = intel && intel.context_completeness === 'COMPLETE' ? '#4CAF50' : (intel && intel.context_completeness === 'REDACTED' ? '#9C27B0' : '#FF9800');
         const verificationColor = intel && intel.verification_status === 'COMPLETED' ? '#4CAF50' : (intel && intel.verification_status === 'PARTIALLY_VERIFIED' ? '#2196F3' : '#FF9800');
 
@@ -77,6 +83,29 @@ export class CheckpointSidebarViewProvider implements vscode.WebviewViewProvider
         const evidenceSource = intel && intel.evidence && intel.evidence.source ? (intel.evidence.source.available ? '✓ Source' : '✗ Source') : '✗ Source';
         const evidenceTests = intel && intel.evidence && intel.evidence.tests ? (intel.evidence.tests.available ? '✓ Tests' : '✗ Tests') : '✗ Tests';
         const evidenceGraph = intel && intel.evidence && intel.evidence.graph ? (intel.evidence.graph.available ? '✓ Graph' : '✗ Graph') : '✗ Graph';
+
+        const milestoneRows = milestones.map(m => {
+            const issuesList = (m.associated_issues || []).map(issue => `
+                <div style="padding: 4px 0; border-top: 1px solid var(--vscode-widget-border); font-size: 0.8em; display: flex; justify-content: space-between; align-items: center;">
+                    <div>
+                        <span style="color: var(--vscode-textPreformat-foreground); font-weight: bold;">#${issue.github_issue_number || issue.id}</span>
+                        <span>${issue.title}</span>
+                    </div>
+                    <button onclick="postUrl('openGitHubUrl', '${issue.github_url || ''}')" style="width: auto; padding: 2px 6px; margin: 0; font-size: 0.7em;">GitHub</button>
+                </div>
+            `).join('');
+
+            return `
+                <div style="padding: 8px; margin-bottom: 8px; border: 1px solid var(--vscode-widget-border); border-radius: 4px; background: var(--vscode-editor-background);">
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <strong style="font-size: 0.9em;">${m.title}</strong>
+                        <span class="badge" style="background: ${m.state === 'open' ? '#2196F3' : '#4CAF50'};">${m.state.toUpperCase()}</span>
+                    </div>
+                    <div style="font-size: 0.8em; color: var(--vscode-descriptionForeground); margin: 4px 0;">${m.description}</div>
+                    ${issuesList}
+                </div>
+            `;
+        }).join('');
 
         const commitRows = commits.map(c => {
             const hasCp = checkpoints.some(cp => cp.commit_ref === c.short_sha || cp.commit_ref === c.sha);
@@ -158,6 +187,11 @@ export class CheckpointSidebarViewProvider implements vscode.WebviewViewProvider
                     </div>
                 </div>
 
+                <h4>🎯 GitHub Milestones & Requirements</h4>
+                <div>
+                    ${milestoneRows}
+                </div>
+
                 <h4>Commits & Development History</h4>
                 <div class="card">
                     ${commitRows}
@@ -169,6 +203,7 @@ export class CheckpointSidebarViewProvider implements vscode.WebviewViewProvider
                 <script>
                     const vscode = acquireVsCodeApi();
                     function post(type) { vscode.postMessage({ type }); }
+                    function postUrl(type, url) { vscode.postMessage({ type, url }); }
                 </script>
             </body>
             </html>

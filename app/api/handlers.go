@@ -5,6 +5,7 @@ import (
 	"errors"
 	"log/slog"
 	"net/http"
+	"strconv"
 	"strings"
 	"time"
 
@@ -338,8 +339,58 @@ func (h *APIHandler) RepositoriesHandler(w http.ResponseWriter, r *http.Request)
 		} else {
 			WriteAPIError(w, http.StatusMethodNotAllowed, "METHOD_NOT_ALLOWED", "Only POST is allowed")
 		}
+	case "milestones":
+		// GET /api/repositories/:id/milestones or GET /api/repositories/:id/milestones/:number/issues
+		owner := "KAUSHALK123"
+		repoName := "cli_BTW"
+		if repo, err := h.deps.RepoManager.GetRepository(r.Context(), repoID); err == nil && repo.Owner != "" {
+			owner = repo.Owner
+			repoName = repo.Name
+		}
+
+		if len(parts) == 2 {
+			milestones, err := h.deps.GitHubProvider.GetMilestones(r.Context(), owner, repoName)
+			if err != nil {
+				slog.Warn("GitHub API milestones query failed, using dev provider fallback", "error", err)
+				devProv := providers.NewDevGitHubProvider()
+				milestones, _ = devProv.GetMilestones(r.Context(), owner, repoName)
+			}
+			json.NewEncoder(w).Encode(milestones)
+			return
+		}
+
+		if len(parts) >= 3 {
+			msNumber, _ := strconv.Atoi(parts[2])
+			issues, err := h.deps.GitHubProvider.GetMilestoneIssues(r.Context(), owner, repoName, msNumber)
+			if err != nil {
+				slog.Warn("GitHub API milestone issues query failed, using dev provider fallback", "error", err)
+				devProv := providers.NewDevGitHubProvider()
+				issues, _ = devProv.GetMilestoneIssues(r.Context(), owner, repoName, msNumber)
+			}
+			json.NewEncoder(w).Encode(issues)
+			return
+		}
+
 	case "requirements":
-		// GET /api/repositories/:id/requirements
+		// GET /api/repositories/:id/requirements or GET /api/repositories/:id/requirements/:issue_number
+		owner := "KAUSHALK123"
+		repoName := "cli_BTW"
+		if repo, err := h.deps.RepoManager.GetRepository(r.Context(), repoID); err == nil && repo.Owner != "" {
+			owner = repo.Owner
+			repoName = repo.Name
+		}
+
+		if len(parts) == 3 {
+			issueNum, _ := strconv.Atoi(parts[2])
+			req, err := h.deps.GitHubProvider.GetRequirementByIssueNumber(r.Context(), owner, repoName, issueNum)
+			if err != nil {
+				WriteAPIError(w, http.StatusNotFound, "REQUIREMENT_NOT_FOUND", "Requirement issue not found")
+				return
+			}
+			json.NewEncoder(w).Encode(req)
+			return
+		}
+
 		reqs, err := h.deps.ReqAnalyzer.AnalyzeRequirements(r.Context(), repoID)
 		if err != nil {
 			slog.Error("Failed to analyze requirements", "repoID", repoID, "error", err)
