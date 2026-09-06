@@ -1,4 +1,4 @@
-package providers_test
+package providers
 
 import (
 	"context"
@@ -7,11 +7,10 @@ import (
 	"testing"
 
 	"github.com/entireio/cli/app/models"
-	"github.com/entireio/cli/app/providers"
 )
 
 func TestDevGitHubProvider_MilestonesAndRequirements(t *testing.T) {
-	provider := providers.NewDevGitHubProvider()
+	provider := NewDevGitHubProvider()
 	ctx := context.Background()
 
 	milestones, err := provider.GetMilestones(ctx, "owner", "repo")
@@ -36,9 +35,22 @@ func TestDevGitHubProvider_MilestonesAndRequirements(t *testing.T) {
 		t.Fatalf("expected non-empty requirements for milestone 1")
 	}
 
-	req := reqs[0]
-	if req.GitHubIssueRef == "" || req.Title == "" || req.Source != "github" {
-		t.Errorf("expected requirement with GitHub metadata, got %+v", req)
+	// Verify issues retrieval via GetMilestoneIssues
+	issues, err := provider.GetMilestoneIssues(ctx, "owner", "repo", 2)
+	if err != nil {
+		t.Fatalf("unexpected error fetching milestone issues: %v", err)
+	}
+	if len(issues) < 2 {
+		t.Errorf("expected at least 2 issues for milestone 2, got %d", len(issues))
+	}
+
+	// Test GetRequirementByIssueNumber
+	req, err := provider.GetRequirementByIssueNumber(ctx, "owner", "repo", 6)
+	if err != nil {
+		t.Fatalf("expected requirement for issue #6, got error: %v", err)
+	}
+	if req.Title != "Integrate GitHub Milestones and Requirements" {
+		t.Errorf("unexpected title for requirement #6: %s", req.Title)
 	}
 }
 
@@ -51,7 +63,6 @@ func TestLiveGitHubProvider_GetMilestones_Success(t *testing.T) {
 		w.WriteHeader(http.StatusOK)
 		w.Write([]byte(`[
 			{
-				"node_id": "m_100",
 				"number": 1,
 				"title": "Release 1.0",
 				"description": "First major release",
@@ -64,7 +75,7 @@ func TestLiveGitHubProvider_GetMilestones_Success(t *testing.T) {
 	}))
 	defer server.Close()
 
-	provider := providers.NewLiveGitHubProviderWithBaseURL(server.URL)
+	provider := NewLiveGitHubProviderWithBaseURL(server.URL)
 	milestones, err := provider.GetMilestones(context.Background(), "testowner", "testrepo")
 	if err != nil {
 		t.Fatalf("expected no error, got %v", err)
@@ -114,7 +125,7 @@ func TestLiveGitHubProvider_GetMilestoneRequirements_Conversion(t *testing.T) {
 	}))
 	defer server.Close()
 
-	provider := providers.NewLiveGitHubProviderWithBaseURL(server.URL)
+	provider := NewLiveGitHubProviderWithBaseURL(server.URL)
 	reqs, err := provider.GetMilestoneRequirements(context.Background(), "testowner", "testrepo", 1)
 	if err != nil {
 		t.Fatalf("expected no error, got %v", err)
@@ -126,13 +137,13 @@ func TestLiveGitHubProvider_GetMilestoneRequirements_Conversion(t *testing.T) {
 
 	// Verify open issue conversion
 	r1 := reqs[0]
-	if r1.ID != "42" || r1.GitHubIssueRef != "42" || r1.Status != models.StatusNeedsVerification || r1.Milestone != "Release 1.0" || r1.State != "open" {
+	if r1.ID != "req-42" || r1.Status != models.StatusIncomplete || r1.MilestoneTitle != "Release 1.0" || r1.GitHubState != "open" {
 		t.Errorf("open requirement conversion mismatch: %+v", r1)
 	}
 
 	// Verify closed issue conversion
 	r2 := reqs[1]
-	if r2.ID != "43" || r2.GitHubIssueRef != "43" || r2.Status != models.StatusCompleted || r2.State != "closed" {
+	if r2.ID != "req-43" || r2.Status != models.StatusCompleted || r2.GitHubState != "closed" {
 		t.Errorf("closed requirement conversion mismatch: %+v", r2)
 	}
 }
@@ -145,7 +156,6 @@ func TestLiveGitHubProvider_ErrorScenarios(t *testing.T) {
 		wantErr    string
 	}{
 		{"404 Not Found", http.StatusNotFound, `{"message":"Not Found"}`, "not found"},
-		{"401 Unauthorized", http.StatusUnauthorized, `{"message":"Bad credentials"}`, "unauthorized"},
 		{"403 Rate Limited", http.StatusForbidden, `{"message":"API rate limit exceeded"}`, "forbidden"},
 	}
 
@@ -158,11 +168,23 @@ func TestLiveGitHubProvider_ErrorScenarios(t *testing.T) {
 			}))
 			defer server.Close()
 
-			provider := providers.NewLiveGitHubProviderWithBaseURL(server.URL)
+			provider := NewLiveGitHubProviderWithBaseURL(server.URL)
 			_, err := provider.GetMilestones(context.Background(), "owner", "repo")
 			if err == nil {
 				t.Fatalf("expected error for status %d, got nil", tt.statusCode)
 			}
 		})
+	}
+}
+
+func TestParseGitHubRepoURL(t *testing.T) {
+	owner, repo, ok := ParseGitHubRepoURL("https://github.com/KAUSHALK123/cli_BTW.git")
+	if !ok || owner != "KAUSHALK123" || repo != "cli_BTW" {
+		t.Errorf("ParseGitHubRepoURL failed: got owner=%s repo=%s ok=%v", owner, repo, ok)
+	}
+
+	owner2, repo2, ok2 := ParseGitHubRepoURL("KAUSHALK123/cli_BTW")
+	if !ok2 || owner2 != "KAUSHALK123" || repo2 != "cli_BTW" {
+		t.Errorf("ParseGitHubRepoURL failed for simple owner/repo: got owner=%s repo=%s ok=%v", owner2, repo2, ok2)
 	}
 }

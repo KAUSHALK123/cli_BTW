@@ -60,8 +60,17 @@ class CheckpointApiClient {
     async getCommitContext(sha, repoId = 'repo-cli-btw') {
         return this.fetchJson(`/api/repositories/${repoId}/commits/${sha}/context`);
     }
+    async getMilestones(repoId = 'repo-cli-btw') {
+        return this.fetchJson(`/api/repositories/${repoId}/milestones`);
+    }
+    async getMilestoneIssues(milestoneNumber, repoId = 'repo-cli-btw') {
+        return this.fetchJson(`/api/repositories/${repoId}/milestones/${milestoneNumber}/issues`);
+    }
     async getRequirements(repoId = 'repo-cli-btw') {
         return this.fetchJson(`/api/repositories/${repoId}/requirements`);
+    }
+    async getRequirement(issueNumber, repoId = 'repo-cli-btw') {
+        return this.fetchJson(`/api/repositories/${repoId}/requirements/${issueNumber}`);
     }
     async getGraphFindings(repoId = 'repo-cli-btw') {
         return this.fetchJson(`/api/repositories/${repoId}/graph`);
@@ -73,7 +82,7 @@ class CheckpointApiClient {
         return new Promise((resolve, reject) => {
             const req = http.request(`${this.baseUrl}${path}`, { method }, (res) => {
                 let data = '';
-                res.on('data', chunk => data += chunk);
+                res.on('data', (chunk) => data += chunk);
                 res.on('end', () => {
                     try {
                         resolve(JSON.parse(data));

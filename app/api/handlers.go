@@ -370,8 +370,58 @@ func (h *APIHandler) RepositoriesHandler(w http.ResponseWriter, r *http.Request)
 		} else {
 			WriteAPIError(w, http.StatusMethodNotAllowed, "METHOD_NOT_ALLOWED", "Only POST is allowed")
 		}
+	case "milestones":
+		// GET /api/repositories/:id/milestones or GET /api/repositories/:id/milestones/:number/issues or /requirements
+		owner := "KAUSHALK123"
+		repoName := "cli_BTW"
+		if repo, err := h.deps.RepoManager.GetRepository(r.Context(), repoID); err == nil && repo.Owner != "" {
+			owner = repo.Owner
+			repoName = repo.Name
+		}
+
+		if len(parts) == 2 {
+			milestones, err := h.deps.GitHubProvider.GetMilestones(r.Context(), owner, repoName)
+			if err != nil {
+				slog.Warn("GitHub API milestones query failed, using dev provider fallback", "error", err)
+				devProv := providers.NewDevGitHubProvider()
+				milestones, _ = devProv.GetMilestones(r.Context(), owner, repoName)
+			}
+			json.NewEncoder(w).Encode(milestones)
+			return
+		}
+
+		if len(parts) >= 3 {
+			msNumber, _ := strconv.Atoi(parts[2])
+			reqs, err := h.deps.GitHubProvider.GetMilestoneRequirements(r.Context(), owner, repoName, msNumber)
+			if err != nil {
+				slog.Warn("GitHub API milestone requirements query failed, using dev provider fallback", "error", err)
+				devProv := providers.NewDevGitHubProvider()
+				reqs, _ = devProv.GetMilestoneRequirements(r.Context(), owner, repoName, msNumber)
+			}
+			json.NewEncoder(w).Encode(reqs)
+			return
+		}
+
 	case "requirements":
-		// GET /api/repositories/:id/requirements
+		// GET /api/repositories/:id/requirements or GET /api/repositories/:id/requirements/:issue_number
+		owner := "KAUSHALK123"
+		repoName := "cli_BTW"
+		if repo, err := h.deps.RepoManager.GetRepository(r.Context(), repoID); err == nil && repo.Owner != "" {
+			owner = repo.Owner
+			repoName = repo.Name
+		}
+
+		if len(parts) == 3 {
+			issueNum, _ := strconv.Atoi(parts[2])
+			req, err := h.deps.GitHubProvider.GetRequirementByIssueNumber(r.Context(), owner, repoName, issueNum)
+			if err != nil {
+				WriteAPIError(w, http.StatusNotFound, "REQUIREMENT_NOT_FOUND", "Requirement issue not found")
+				return
+			}
+			json.NewEncoder(w).Encode(req)
+			return
+		}
+
 		reqs, err := h.deps.ReqAnalyzer.AnalyzeRequirements(r.Context(), repoID)
 		if err != nil {
 			slog.Error("Failed to analyze requirements", "repoID", repoID, "error", err)
@@ -399,41 +449,6 @@ func (h *APIHandler) RepositoriesHandler(w http.ResponseWriter, r *http.Request)
 			return
 		}
 		json.NewEncoder(w).Encode(handoff)
-
-	case "milestones":
-		repo, err := h.deps.RepoAnalyzer.AnalyzeRepository(r.Context(), ".", false)
-		if err != nil || repo.Owner == "" || repo.Name == "" {
-			// Fallback if local analysis doesn't have it
-			repo = &models.Repository{Owner: "KAUSHALK123", Name: "cli_BTW"}
-		}
-		
-		if len(parts) == 2 {
-			// GET /api/repositories/:id/milestones
-			milestones, err := h.deps.GitHubProvider.GetMilestones(r.Context(), repo.Owner, repo.Name)
-			if err != nil {
-				slog.Error("Failed to fetch milestones", "repoID", repoID, "error", err)
-				WriteAPIError(w, http.StatusInternalServerError, "MILESTONE_FETCH_FAILED", err.Error())
-				return
-			}
-			json.NewEncoder(w).Encode(milestones)
-			return
-		} else if len(parts) == 4 && parts[3] == "requirements" {
-			// GET /api/repositories/:id/milestones/:number/requirements
-			milestoneNumber, err := strconv.Atoi(parts[2])
-			if err != nil {
-				WriteAPIError(w, http.StatusBadRequest, "INVALID_MILESTONE", "Milestone number must be an integer")
-				return
-			}
-			reqs, err := h.deps.GitHubProvider.GetMilestoneRequirements(r.Context(), repo.Owner, repo.Name, milestoneNumber)
-			if err != nil {
-				slog.Error("Failed to fetch milestone requirements", "repoID", repoID, "milestone", milestoneNumber, "error", err)
-				WriteAPIError(w, http.StatusInternalServerError, "MILESTONE_REQUIREMENTS_FETCH_FAILED", err.Error())
-				return
-			}
-			json.NewEncoder(w).Encode(reqs)
-			return
-		}
-		WriteAPIError(w, http.StatusNotFound, "ENDPOINT_NOT_FOUND", "The requested API endpoint was not found")
 
 	default:
 		WriteAPIError(w, http.StatusNotFound, "ENDPOINT_NOT_FOUND", "The requested API endpoint was not found")

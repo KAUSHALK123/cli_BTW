@@ -272,8 +272,88 @@ document.addEventListener('DOMContentLoaded', () => {
         // Refresh Sub-resources
         fetchCheckpoints(repo.id);
         fetchMilestones(repo.id);
+        fetchRequirements(repo.id);
         fetchGraphData(repo.id);
         fetchHandoffData(repo.id);
+    }
+
+    async function fetchMilestones(repoID) {
+        try {
+            const res = await fetch(`${API_BASE}/repositories/${repoID}/milestones`);
+            const milestones = await res.json();
+            const container = document.getElementById('milestones-container');
+            if (container) {
+                if (!milestones || milestones.length === 0) {
+                    container.innerHTML = '<div style="color: var(--text-secondary);">No GitHub milestones found for this repository.</div>';
+                    return;
+                }
+                container.innerHTML = milestones.map(m => `
+                    <div class="card" style="background: rgba(30, 41, 59, 0.6); padding: 14px; border-radius: 8px; border: 1px solid var(--border-color); display: flex; flex-direction: column; justify-space-between;">
+                        <div>
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+                                <strong style="color: #38bdf8; font-size: 0.95rem;">${m.title}</strong>
+                                <span class="status-badge ${m.state === 'open' ? 'partial' : 'completed'}">${m.state.toUpperCase()}</span>
+                            </div>
+                            <div style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 8px;">${m.description || 'No description provided.'}</div>
+                            <div style="font-size: 0.8rem; color: #94a3b8; margin-bottom: 8px;">
+                                <span>Issues: ${m.open_issues} open / ${m.closed_issues} closed</span>
+                                ${m.due_date ? ` • Due: ${new Date(m.due_date).toLocaleDateString()}` : ''}
+                            </div>
+                        </div>
+                        <button onclick="loadMilestoneIssues('${repoID}', ${m.number}, '${m.title.replace(/'/g, "\\'")}')" style="padding: 6px 12px; background: rgba(56, 189, 248, 0.2); color: #38bdf8; border: 1px solid rgba(56, 189, 248, 0.4); border-radius: 4px; cursor: pointer; font-size: 0.8rem; margin-top: 6px;">Inspect Milestone Issues</button>
+                    </div>
+                `).join('');
+            }
+        } catch (err) {
+            console.error('Failed to fetch milestones:', err);
+        }
+    }
+
+    window.loadMilestoneIssues = async function(repoID, milestoneNumber, milestoneTitle) {
+        const titleEl = document.getElementById('selected-milestone-title');
+        if (titleEl) titleEl.textContent = `Showing Issues for Milestone: ${milestoneTitle}`;
+
+        const tbody = document.getElementById('requirements-table-body');
+        if (tbody) tbody.innerHTML = '<tr><td colspan="6" class="text-center"><div class="spinner">Loading milestone requirements...</div></td></tr>';
+
+        try {
+            const res = await fetch(`${API_BASE}/repositories/${repoID}/milestones/${milestoneNumber}/issues`);
+            const reqs = await res.json();
+            renderRequirementsTable(reqs);
+        } catch (err) {
+            console.error('Failed to load milestone issues:', err);
+        }
+    };
+
+    function renderRequirementsTable(reqs) {
+        const tbody = document.getElementById('requirements-table-body');
+        if (!tbody) return;
+        if (!reqs || reqs.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="6" class="text-center">No requirements found for this milestone.</td></tr>';
+            return;
+        }
+        tbody.innerHTML = reqs.map(r => `
+            <tr>
+                <td><code style="color: #38bdf8; font-weight: bold;">#${r.github_issue_number || r.id}</code></td>
+                <td><strong>${r.title}</strong><br><small style="color: var(--text-secondary);">${r.description || ''}</small></td>
+                <td><span style="font-size: 0.8rem; color: #94a3b8;">${r.milestone_title || 'General'}</span></td>
+                <td><span class="status-badge ${r.status || 'incomplete'}">${(r.github_state || r.status || 'OPEN').toUpperCase()}</span></td>
+                <td>${(r.github_labels || []).map(l => `<span class="badge" style="background: rgba(148, 163, 184, 0.2); color: #cbd5e1; margin-right: 4px; font-size: 0.75rem;">${l}</span>`).join('') || '-'}</td>
+                <td>
+                    ${r.github_url ? `<a href="${r.github_url}" target="_blank" style="color: #60a5fa; font-size: 0.85rem; text-decoration: none;">GitHub Issue 🔗</a>` : '-'}
+                </td>
+            </tr>
+        `).join('');
+    }
+
+    async function fetchRequirements(repoID) {
+        try {
+            const res = await fetch(`${API_BASE}/repositories/${repoID}/requirements`);
+            const reqs = await res.json();
+            renderRequirementsTable(reqs);
+        } catch (err) {
+            console.error('Failed to fetch requirements:', err);
+        }
     }
 
     async function fetchIntelligenceCommits(repoID) {

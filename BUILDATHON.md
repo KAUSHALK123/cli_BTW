@@ -72,6 +72,26 @@ The application consists of four integrated, production-grade layers:
      - Developer Handoff briefing.
    - Status bar readiness audit indicator.
 
+## GitHub Milestones & Requirements Integration (Issue #6)
+- **GitHub Repository & Milestone Integration**: Connects workspace repositories with GitHub REST API (`app/providers/github_provider.go`) to fetch repository milestones and associated issues as application domain development requirements (`models.Milestone`, `models.Requirement`).
+- **Trace-Back Reference Preservation**: Preserves original GitHub references (`github_issue_number`, `github_milestone_id`, `github_milestone_number`, `github_url`, `github_state`, `github_labels`, `github_assignees`) for downstream evaluation by Phase 3 Checkpoint Intelligence.
+- **Graceful Error & Fallback Handling**: Implements `LiveGitHubProvider` (with `GITHUB_TOKEN` support and rate-limit awareness) alongside `DevGitHubProvider` fixtures to guarantee offline reliability and graceful failure handling.
+- **REST API Endpoints**:
+  - `GET /api/repositories/:id/milestones`: Returns all GitHub milestones for the repository.
+  - `GET /api/repositories/:id/milestones/:number/issues`: Returns development requirements/issues for a specific milestone.
+  - `GET /api/repositories/:id/requirements/:issue_number`: Returns single requirement details with GitHub metadata.
+- **Multi-UX Exposure**: Exposed across VS Code Extension (`vscode-extension/src/views/sidebarView.ts`) and Web Dashboard (`app/frontend/index.html`, `app/frontend/app.js`).
+
+## Commit & Development Context Navigation
+- **Git to Checkpoint Data Pipeline**: Maps Git commits to corresponding Entire Checkpoint sessions (`app/models/commit.go`, `app/providers/commit_provider.go`).
+- **REST API Contracts**:
+  - `GET /api/repositories/:id/commits`: Retrieves recent Git commit history with SHA, Author, Message, Timestamp, and Changed Files.
+  - `GET /api/repositories/:id/commits/:sha/context`: Retrieves detailed `CommitDevelopmentContext` mapping Git commit to sanitized Entire Checkpoint context.
+- **Explicit Context Distinction**:
+  - `AVAILABLE`: Commit has an associated Entire Checkpoint (`[Entire Checkpoint Available]`).
+  - `UNAVAILABLE`: Commit has no Checkpoint context (`[Git-Only / Checkpoint Unavailable]`).
+  - Missing or incomplete Checkpoints explicitly return `MissingContextReason` instead of fabricating data.
+
 2. **Core Backend Engine & REST API (`app/`)**:
    - `app/models/`: Domain models (`Repository`, `Requirement`, `Checkpoint`, `Commit`, `Intelligence`, `GraphFinding`, `Handoff`).
    - `app/providers/`: Service providers (`LiveIntelligenceEngine`, `LiveRepositoryAnalyzer`, `MemoryRepoManager`, `DevCommitProvider`, `DevCheckpointProvider`, `DevGraphProvider`).
