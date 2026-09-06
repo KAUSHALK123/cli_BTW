@@ -1,56 +1,39 @@
-# Entire Audit & Handoff Engine (`entire audit`)
+# Entire Checkpoint Intelligence & Audit Platform (`entire`)
 
 ## One-sentence summary
-A checkpoint-native release readiness audit engine and handoff system built on top of Entire CLI and Entire Graph.
+A checkpoint-native developer intelligence platform and VS Code extension built on top of Entire CLI and Entire Graph that turns preserved developer intent, Git diffs, and AST graph evidence into actionable release readiness assessments and handoff packages.
 
-## Problem, intended user and why it matters
-When AI agents or software developers collaborate on codebases, Git diffs only capture *what* lines changed (`+` and `-`), completely losing *why* the changes were made, what tool attempts failed, what edge cases remain untested, and what unresolved risks exist. 
+---
 
-**Intended Users**: Software Engineers, Technical Leads, and AI Coding Agents performing code reviews, release-readiness assessments, or task handoffs.
+## Problem, Intended User, and Why It Matters
 
-**Why it Matters**: `entire audit` turns passive session tracking into active developer intelligence by verifying prompt intent against implementation, discovering pending risks/TODOs, scoring release readiness (0-100), and outputting machine-readable handoff context (`handoff.json`) so another developer or agent can resume work without repeating past mistakes.
+### Problem
+When AI agents or human developers collaborate on codebases, raw Git diffs only capture *what* lines changed (`+` and `-`), completely losing *why* the changes were made, what original prompt intent was specified, what tool execution steps failed, and what unverified risks or incomplete requirements remain.
 
-## Selected Entire track and why Entire is essential
+### Intended Users
+Software Engineers, Technical Leads, and AI Coding Agents performing code reviews, release-readiness assessments, or developer task handoffs.
+
+### Why It Matters
+`entire` turns passive session tracking into active developer intelligence (`Repository → Requirement → Development History → Commit → Entire Checkpoint → Intelligence → Entire Graph Impact → Handoff`) by:
+1. Verifying prompt intent against actual implementation.
+2. Assessing context completeness (`COMPLETE`, `INCOMPLETE`, `REDACTED`, `UNAVAILABLE`).
+3. Generating a 5-source Evidence Matrix (`Checkpoint`, `Commit`, `Source`, `Tests`, `Graph`).
+4. Outputting machine-readable developer handoff packages (`handoff.json`).
+
+---
+
+## Selected Track & Why Entire Is Essential
+
 **Selected Track**: Track 1 — Build a Checkpoint-Native Developer Experience
 
 **Why Entire is Essential**:
-Checkpoint context is the core input for `entire audit`. Without Entire Checkpoints and transcripts, intent verification, agent attempt history, and handoff packages would be impossible to reconstruct from raw Git commits alone.
+Preserved Entire Checkpoint context is the core input for Checkpoint Intelligence. Without Entire Checkpoints and transcripts, intent verification, prompt completeness assessment, tool execution history, and developer handoffs would be impossible to reconstruct from raw Git commits alone.
 
-## Architecture and main workflow
-The application consists of three integrated, clean layers:
+---
 
-1. **Primary Interface — VS Code Extension (`vscode-extension/`)**:
-   - Built in TypeScript (`vscode-extension/src/`).
-   - Automatically checks environment readiness (`entire` CLI installed, repo enabled, `entire graph` available).
-   - Sidebar Webview & Panel displaying Readiness Status, Requirements Audit Tree, Redacted Checkpoints, Entire Graph Impact analysis, and Handoff Card.
-   - Status Bar item showing readiness audit score (e.g. `$(shield-check) Entire Audit: 85/100`).
-   - Enable/Connect Entire setup workflow button for non-enabled workspaces.
+## Architecture and Main Workflow
 
-2. **Core Backend Engine (`app/`)**:
-   - `app/config/`: Environment configuration.
-   - `app/privacy/`: `PrivacySanitizer` engine redacting raw prompt transcripts, tokens, and PII.
-   - `app/databricks/`: `DatabricksExporter` sending non-PII, privacy-safe metrics.
-   - `app/models/`: Domain models (`Repository`, `Requirement`, `Checkpoint`, `GraphFinding`, `Handoff`).
-   - `app/providers/`: Abstraction interfaces (`EntireCheckpointProvider`, `EntireGraphProvider`, `GitHubProvider`, `RepositoryAnalyzer`, `RequirementAnalyzer`).
-   - `app/api/`: REST API Server (`/api/health`, `/api/readiness`, `/api/enable`, `/api/repositories/...`).
-
-3. **Secondary Interface — Web Dashboard (`app/frontend/`)**:
-   - Glassmorphism browser dashboard consuming identical `/api/...` endpoints.
-
-4. **CLI Extension (`entire audit` / `cmd/entire/cli/audit`)**:
-   - `entire audit`: Full CLI release readiness & intent audit.
-   - `entire audit intent`: Intent verification matrix.
-   - `entire audit risks`: Codebase & session risk scanner.
-   - `entire audit report`: Markdown readiness report exporter.
-   - `entire audit handoff`: Structured JSON/Markdown handoff briefing.
-   - `entire audit tui`: Interactive Bubbletea multi-tab TUI dashboard.
-
-2. **Core Application Foundation (`app/`)**:
-   - `app/config/`: Environment configuration (`.env.example`).
-   - `app/models/`: Domain models (`Repository`, `Requirement`, `Checkpoint`, `GraphFinding`, `Handoff`).
-   - `app/providers/`: Abstraction interfaces (`EntireCheckpointProvider`, `EntireGraphProvider`, `GitHubProvider`, `RepositoryAnalyzer`, `RequirementAnalyzer`).
-   - `app/api/`: REST API Server (`/api/health`, `/api/repositories`, `/api/repositories/:id/checkpoints`, `/api/repositories/:id/requirements`, `/api/repositories/:id/graph`, `/api/repositories/:id/handoff`) with standardized error payloads and `slog` request logging.
-   - `app/frontend/`: Glassmorphism web dashboard shell connecting to REST API endpoints.
+The application consists of four integrated, production-grade layers:
 
 ```
                   ┌───────────────────────────────┐
@@ -59,12 +42,13 @@ The application consists of three integrated, clean layers:
                                   │
                                   ▼
                 ┌───────────────────────────────────┐
-                │   Entire Audit Engine (`audit/`)  │
+                │ Checkpoint Intelligence Engine    │
+                │     (`app/providers/`)            │
                 └─┬───────────────┬───────────────┬─┘
                   │               │               │
                   ▼               ▼               ▼
          ┌────────────────┐┌──────────────┐┌───────────────┐
-         │ VS Code Ext UI ││  REST API    ││ Handoff JSON  │
+         │ VS Code Ext UI ││  REST API    ││ Handoff Package│
          │ (Primary UX)   ││ (`/api/...`) ││ (`handoff.json`)│
          └────────────────┘└──────┬───────┘└───────────────┘
                                   │
@@ -108,63 +92,104 @@ Entire Graph structural findings are integrated to verify symbol definitions, ca
 - **Checkpoint 4 (Final Release Verification)**: Final submission build & verified readiness report.
 
 ## Setup, run and test instructions
+1. **Primary Interface — VS Code Extension (`vscode-extension/`)**:
+   - Built in TypeScript (`vscode-extension/src/`).
+   - Displays **Checkpoint Intelligence HERO View** directly in the editor sidebar:
+     - Active Requirement & Milestone mapping.
+     - Context Completeness Badge (`COMPLETE` / `INCOMPLETE` / `REDACTED` / `UNAVAILABLE`).
+     - Verification Status Badge (`COMPLETED` / `PARTIALLY_VERIFIED` / `NEEDS_VERIFICATION`).
+     - Interactive Commit / Checkpoint Selector.
+     - 🔴 **1-Click Curveball Demo (`Redacted Context`)** button.
+     - 5-Source Evidence Matrix (`Checkpoint`, `Commit`, `Source`, `Tests`, `Graph`).
+     - Entire Graph Structural Impact analysis.
+     - Developer Handoff briefing.
+   - Status bar readiness audit indicator.
+
+2. **Core Backend Engine & REST API (`app/`)**:
+   - `app/models/`: Domain models (`Repository`, `Requirement`, `Checkpoint`, `Commit`, `Intelligence`, `GraphFinding`, `Handoff`).
+   - `app/providers/`: Service providers (`LiveIntelligenceEngine`, `LiveRepositoryAnalyzer`, `MemoryRepoManager`, `DevCommitProvider`, `DevCheckpointProvider`, `DevGraphProvider`).
+   - `app/privacy/`: `PrivacySanitizer` engine redacting raw prompt transcripts, tokens, and PII.
+   - `app/api/`: REST API server providing unified error payloads and `slog` structured logging.
+
+3. **Secondary Interface — Web Dashboard (`app/frontend/`)**:
+   - Glassmorphism web dashboard serving identical `/api/...` endpoints.
+   - Features 1-click `🔴 Demo Curveball` button for instant judge demonstration.
+
+4. **CLI Extension (`cmd/entire/cli/audit`)**:
+   - `entire audit`: Full CLI release readiness & intent audit.
+   - `entire audit intent`: Intent verification matrix.
+   - `entire audit risks`: Codebase & session risk scanner.
+   - `entire audit report`: Markdown readiness report exporter.
+   - `entire audit handoff`: Structured JSON handoff briefing.
+
+---
+
+## Noon Curveball & Privacy Boundary Adaptation
+
+### The Challenge (Noon Curveball)
+How does the application behave when Checkpoint prompt transcripts or intent context are missing, partial, or redacted for privacy?
+
+### The Solution & Adaptations
+1. **Strict Local Privacy Boundary**: Raw prompts and transcripts are sanitized locally using `PrivacySanitizer` (`app/privacy/sanitizer.go`) before exposure. Sensitive API keys, OAuth tokens, and PII are replaced with `[REDACTED]`.
+2. **Context Completeness Representation**:
+   - `COMPLETE`: Full transcript and checkpoint context available.
+   - `INCOMPLETE`: Partial prompt transcript or missing verification metadata.
+   - `REDACTED`: Prompt context contains redacted tokens/credentials.
+   - `UNAVAILABLE`: Git commit has no associated Entire Checkpoint session.
+3. **No False Authoritative Claims**:
+   - When context is `REDACTED` or `INCOMPLETE`, the system **refuses** to claim original intent was verified as `COMPLETED`.
+   - Instead, status is set to `PARTIALLY_VERIFIED` or `NEEDS_VERIFICATION`.
+   - Source tree diffs and Entire Graph structural findings are still presented as valid supporting evidence, but the UI explicitly informs the user that original prompt intent requires unredacted review.
+
+---
+
+## Checkpoint Links & What Each Checkpoint Proves
+
+- **Checkpoint 1 (`cp-001-baseline` / `3dbdf8b83c39`)**: Core Application Foundation setup (models, REST API server, provider abstractions).
+- **Checkpoint 2 (`cp-002-foundation` / `78f4dc59700e`)**: Redacted Checkpoint context curveball adaptation fixture proving partial verification and privacy enforcement.
+- **Checkpoint 3 (`feature/repository-management`)**: Multi-repository workspace management and readiness status tracking.
+- **Checkpoint 4 (`feature/repository-understanding`)**: Automated codebase architecture scanner, tech stack detection, and API route extractor.
+- **Checkpoint 5 (`feature/checkpoint-intelligence`)**: Checkpoint Intelligence Engine, 5-source Evidence Matrix, and VS Code HERO sidebar view.
+
+---
+
+## Setup, Run, and Test Instructions
 
 ### 1. Prerequisites
-- **Go**: Version 1.26 or higher
-- **Git**: Installed and configured
+- **Go**: Version 1.22 or higher
+- **Node.js**: Version 18 or higher (for VS Code extension)
 
-### 2. Installation & Compilation
+### 2. Compilation & Server Startup
 ```bash
-# Build the Entire CLI binary with native audit capabilities
+# Build Entire CLI binary
 go build -o entire.exe ./cmd/entire
-```
 
-### 3. Environment Configuration
-Copy `.env.example` to configure server port and optional integration tokens:
-```bash
-cp .env.example .env
-```
-
-### 4. Running the Application Server & Frontend Dashboard
-```bash
-# Start backend server (serves REST API & static Web Dashboard)
+# Start REST API Server & Web Dashboard
 go run ./app/main.go
 ```
 - **REST API Base**: `http://localhost:8080/api/health`
 - **Web Dashboard**: `http://localhost:8080/`
 
-### 5. Running CLI & TUI Audit Tools
-```bash
-./entire.exe audit
-./entire.exe audit intent
-./entire.exe audit risks
-./entire.exe audit report --output RELEASE_READINESS.md
-./entire.exe audit handoff --json
-./entire.exe audit tui
-```
-
-### 3. Run Backend Server & Dashboard
-```bash
-go run ./app/main.go
-```
-Open browser at: `http://localhost:8080`
-
-### 4. Build VS Code Extension
+### 3. VS Code Extension Setup
 ```bash
 cd vscode-extension
 npm install
 npm run compile
-### 6. Executing Automated Tests
+```
+
+### 4. Running Unit & Integration Tests
 ```bash
-# Run backend foundation tests
+# Run backend & provider tests (100% PASS)
 go test -v ./app/...
 
 # Run audit engine tests
 go test -v ./cmd/entire/cli/audit
 ```
 
-## API Standardized Error Format
-All REST API error responses adhere to the unified format:
+---
+
+## Standardized API Error Payload Format
+All API endpoints return errors in a uniform JSON format:
 ```json
 {
   "error": {
@@ -174,9 +199,26 @@ All REST API error responses adhere to the unified format:
 }
 ```
 
-## Databricks use, data sources and limitations (if applicable)
-Databricks integration is implemented in `app/databricks/exporter.go` as an optional telemetry sink for non-PII audit scores and requirement completion counts. Raw transcripts and prompts are strictly blocked at the local privacy boundary.
+---
 
-## Known limitations and next steps
-- **Known Limitations**: GitHub API client uses dev fixtures when `GITHUB_TOKEN` is unconfigured.
-- **Next Steps**: Expand agent transcript sentiment analysis and add webhook notification triggers for CI/CD pipelines.
+## Primary Demo Flow for Judges (1-Minute Narrative)
+
+1. **Launch Dashboard / VS Code Extension**: Open `http://localhost:8080` or open VS Code extension sidebar.
+2. **Observe Repository Readiness**: Verify Git, GitHub, Entire, and Entire Graph status (100/100).
+3. **Inspect Architecture Summary**: View automatically scanned tech stack (Go, Node.js), entry points (`cmd/entire/main.go`), and API routes.
+4. **Select Commit & Checkpoint**: Click commit `3dbdf8b83c39` to view **Checkpoint Intelligence**:
+   - `Context Completeness`: `COMPLETE` (Green)
+   - `Verification Status`: `COMPLETED` (Green)
+   - `Intent`: Initial architectural understanding and foundation setup.
+   - `5-Source Evidence Matrix`: Checkpoint (✓), Commit (✓), Source (✓), Tests (✓), Graph (✓).
+5. **Demonstrate Curveball (Redacted Context)**: Click **🔴 Demo Curveball** button:
+   - `Context Completeness`: `REDACTED` (Purple)
+   - `Verification Status`: `PARTIALLY_VERIFIED` (Blue)
+   - System displays valid source diffs and Graph findings, but explicitly notes that original prompt intent cannot be marked authoritative due to redacted context.
+6. **Review Developer Handoff**: Inspect structured `handoff.json` briefing and recommended next actions.
+
+---
+
+## Known Limitations and Next Steps
+- **Known Limitations**: GitHub remote API falls back to local Git diffs when unauthenticated.
+- **Next Steps**: Add CI/CD webhook triggers for automated pull request release readiness gates.
