@@ -49,7 +49,7 @@
                 <span class="runner-text">ACTIVE RUNNER: LIVE AST VERIFIER</span>
             </div>
             <div class="target-file-badge">
-                Target: <code id="active-target-file">auth/middleware.go</code>
+                Target: <code id="active-target-file">Select a file...</code>
             </div>
         </div>
     </header>
@@ -263,13 +263,10 @@ ID              COMMIT     TIMESTAMP                 INTENT SUMMARY
                 <div class="explorer-section">
                     <div class="section-title">
                         <span>REPOSITORY CONTEXT</span>
-                        <span class="branch-tag">GIT: MAIN</span>
+                        <span class="branch-tag" id="sidebar-branch-tag">GIT</span>
                     </div>
                     <ul class="file-tree" id="repo-file-tree">
-                        <li class="tree-item dir"><span class="item-icon">📁</span> cmd/gateway</li>
-                        <li class="tree-item file active"><span class="item-icon">📄</span> <span class="file-name">auth/middleware.go</span> <span class="file-badge">M4</span></li>
-                        <li class="tree-item file"><span class="item-icon">📄</span> <span class="file-name">auth/token.go</span></li>
-                        <li class="tree-item file"><span class="item-icon">📄</span> <span class="file-name">tests/auth_test.go</span></li>
+                        <li class="tree-item text-muted">Loading workspace files...</li>
                     </ul>
                 </div>
 
@@ -277,22 +274,11 @@ ID              COMMIT     TIMESTAMP                 INTENT SUMMARY
                 <div class="explorer-section">
                     <div class="section-title">
                         <span>MILESTONE REQUIREMENTS</span>
-                        <span class="status-count success" id="verified-count-badge">3/5 VERIFIED</span>
+                        <span class="status-count" id="verified-count-badge">0 VERIFIED</span>
                     </div>
                     <div class="requirements-list" id="explorer-req-list">
-                        <div class="req-item pass" id="req-card-4">
-                            <div class="req-header">
-                                <span class="req-id">REQ-04: API Authentication</span>
-                                <span class="req-pct pass">60% PASS</span>
-                            </div>
-                            <div class="req-desc">Protect gateway routes with RS256 JWT validation & refresh revocation.</div>
-                        </div>
-                        <div class="req-item queued" id="req-card-5">
-                            <div class="req-header">
-                                <span class="req-id">REQ-05: Rate Limiting</span>
-                                <span class="req-pct queued">QUEUED</span>
-                            </div>
-                            <div class="req-desc">Token bucket rate limiting for protected endpoints.</div>
+                        <div class="req-item text-muted" style="padding: 10px;">
+                            No active milestones retrieved from GitHub API.
                         </div>
                     </div>
                 </div>
@@ -306,10 +292,9 @@ ID              COMMIT     TIMESTAMP                 INTENT SUMMARY
                     <div class="checkpoint-card-list" id="explorer-checkpoint-list">
                         <div class="checkpoint-explorer-card">
                             <div class="cp-top">
-                                <span class="cp-id-code">81M1-ckp-892f</span>
-                                <span class="cp-status-chip pass">PASSED</span>
+                                <span class="cp-id-code text-muted">No Checkpoints</span>
                             </div>
-                            <div class="cp-sub">Commit: <code id="explorer-cp-commit">a81c92f</code> (AST Verified)</div>
+                            <div class="cp-sub">Branch: <code id="explorer-cp-commit">HEAD</code></div>
                         </div>
                     </div>
                 </div>
@@ -319,32 +304,24 @@ ID              COMMIT     TIMESTAMP                 INTENT SUMMARY
         <!-- CENTER COLUMN: CODE EDITOR & INLINE LENS -->
         <main class="column code-editor-column">
             <!-- TAB BAR -->
-            <div class="editor-tabs-bar">
-                <div class="tab active"><span class="tab-code-icon">&lt;&gt;</span> auth/middleware.go <span class="tab-close">×</span></div>
-                <div class="tab"><span class="tab-code-icon">&lt;&gt;</span> tests/auth_test.go</div>
+            <div class="editor-tabs-bar" id="editor-tabs-bar">
+                <div class="tab active"><span class="tab-code-icon">&lt;&gt;</span> <span id="active-tab-filename">Select a file</span></div>
             </div>
 
             <!-- BREADCRUMB & METADATA BAR -->
             <div class="editor-meta-bar">
-                <div class="meta-path">
-                    <code>checkpoint-core</code> &gt; <code>auth</code> &gt; <code>middleware.go</code> &gt; <strong id="active-symbol-name">AuthMiddleware()</strong>
+                <div class="meta-path" id="editor-meta-path">
+                    <code>workspace</code> &gt; <strong id="active-symbol-name">No File Open</strong>
                 </div>
-                <div class="meta-badges">
-                    <span class="meta-badge purple">Checkpoint Ref: <strong id="meta-cp-ref">81M1-ckp-892f</strong></span>
-                    <span class="meta-badge green">AST Node: Linked</span>
-                    <span class="meta-badge gray">Go 1.22.4</span>
+                <div class="meta-badges" id="editor-meta-badges">
+                    <span class="meta-badge purple" id="meta-cp-badge">Checkpoint Ref: <strong id="meta-cp-ref">None</strong></span>
+                    <span class="meta-badge green" id="meta-graph-badge">Graph: Checked</span>
                 </div>
             </div>
 
             <!-- CODE VIEW WITH INLINE LENS OVERLAY -->
-            <div class="code-view-container">
-                <pre class="code-editor-pre"><code><span class="line"><span class="ln">1</span> <span class="kw">package</span> auth</span>
-<span class="line"><span class="ln">2</span> </span>
-<span class="line"><span class="ln">3</span> <span class="kw">import</span> (</span>
-<span class="line"><span class="ln">4</span>     <span class="str">"net/http"</span></span>
-<span class="line"><span class="ln">5</span>     <span class="str">"github.com/golang-jwt/jwt/v5"</span></span>
-<span class="line"><span class="ln">6</span> )</span>
-<span class="line"><span class="ln">7</span> </span></code></pre>
+            <div class="code-view-container" id="editor-code-container">
+                <pre class="code-editor-pre"><code id="code-display-block"><span class="line"><span class="ln">1</span> <span class="cmt">// Select a file from the repository explorer on the left to view contents.</span></span></code></pre>
 
                 <!-- CHECKPOINT INTELLIGENCE INLINE LENS CARD -->
                 <div class="inline-lens-card" id="inline-lens-overlay">
@@ -354,43 +331,18 @@ ID              COMMIT     TIMESTAMP                 INTENT SUMMARY
                             <strong>CHECKPOINT INTELLIGENCE INLINE LENS</strong>
                         </div>
                         <div class="lens-meta">
-                            <span class="lens-tag">Milestone #4 Verification</span>
-                            <span class="lens-tag purple">Impact: 12 Routes Exposed</span>
+                            <span class="lens-tag" id="lens-milestone-tag">Verification Engine</span>
                             <button class="lens-inspect-btn" id="btn-inspect-node">Inspect Node →</button>
                         </div>
                     </div>
-                    <div class="lens-body">
+                    <div class="lens-body" id="lens-body-content">
                         <div class="lens-row verified">
                             <span class="row-icon">✓</span>
                             <span class="row-label">Implemented:</span>
-                            <span class="row-val">RS256 Signature verification using public keystore</span>
-                        </div>
-                        <div class="lens-row pending">
-                            <span class="row-icon">⚠</span>
-                            <span class="row-label">Pending:</span>
-                            <span class="row-val">Refresh-token rotation ('/api/v1/auth/refresh') is</span>
-                        </div>
-                        <div class="lens-row gap">
-                            <span class="row-label-gap">Gap:</span>
-                            <span class="row-val">unmapped in AST graph</span>
+                            <span class="row-val" id="lens-impl-val">Select a commit or checkpoint to inspect implemented intent.</span>
                         </div>
                     </div>
                 </div>
-
-                <!-- CODE CONTINUATION -->
-                <pre class="code-editor-pre"><code><span class="line"><span class="ln">8</span> <span class="kw">func</span> <span class="fn">AuthMiddleware</span>(next http.<span class="type">Handler</span>) http.<span class="type">Handler</span> {</span>
-<span class="line"><span class="ln">9</span>     <span class="kw">return</span> http.<span class="fn">HandlerFunc</span>(<span class="kw">func</span>(w http.<span class="type">ResponseWriter</span>, r *http.<span class="type">Request</span>) {</span>
-<span class="line"><span class="ln">10</span>         tokenString := <span class="fn">extractBearerToken</span>(r)</span>
-<span class="line annotation-line"><span class="ln">11</span>         claims, err := <span class="fn">ValidateToken</span>(tokenString) <span class="graph-annotation-tag">[Graph Finding: 12 downstream callers]</span></span>
-<span class="line"><span class="ln">12</span>         <span class="kw">if</span> err != <span class="kw">nil</span> {</span>
-<span class="line"><span class="ln">13</span>             w.<span class="fn">WriteHeader</span>(http.StatusUnauthorized)</span>
-<span class="line"><span class="ln">14</span>             <span class="kw">return</span></span>
-<span class="line"><span class="ln">15</span>         }</span>
-<span class="line comment-line"><span class="ln">16</span>         <span class="cmt">// Missing revocation cache check before context injection</span></span>
-<span class="line"><span class="ln">17</span>         ctx := context.<span class="fn">WithValue</span>(r.Context(), <span class="str">"user_claims"</span>, claims)</span>
-<span class="line"><span class="ln">18</span>         next.<span class="fn">ServeHTTP</span>(w, r.<span class="fn">WithContext</span>(ctx))</span>
-<span class="line"><span class="ln">19</span>     })</span>
-<span class="line"><span class="ln">20</span> }</span></code></pre>
             </div>
         </main>
 
@@ -398,27 +350,26 @@ ID              COMMIT     TIMESTAMP                 INTENT SUMMARY
         <aside class="column inspector-column">
             <div class="column-header">
                 <span class="header-title">CHECKPOINT REASONING INSPECTOR</span>
-                <span class="version-tag font-mono">v1.4.2</span>
+                <span class="version-tag font-mono">v1.6.0</span>
             </div>
-
             <div class="inspector-scroll-area">
                 <!-- CONTEXT SIMULATION MODE TOGGLE -->
                 <div class="context-sim-card glass">
-                    <div class="sim-header">CONTEXT SIMULATION MODE:</div>
+                    <div class="sim-header">CONTEXT PRIVACY MODE:</div>
                     <div class="sim-toggle-buttons">
                         <button class="sim-btn active-complete" id="btn-mode-complete">
                             ✓ COMPLETE CONTEXT
                         </button>
                         <button class="sim-btn" id="btn-mode-incomplete">
-                            ⚠ INCOMPLETE CONTEXT
+                            ⚠ REDACTED CONTEXT
                         </button>
                     </div>
                     <div class="confidence-banner">
                         <div class="confidence-text">
-                            <span class="confidence-icon">✓</span>
-                            <span id="sim-confidence-desc">High confidence ✓ Full AST graph symbols, prompt origins, passing tests, runtime telemetry accessible.</span>
+                            <span class="confidence-icon" id="sim-confidence-icon">✓</span>
+                            <span id="sim-confidence-desc">High confidence ✓ Full AST graph symbols, commit diffs, passing tests accessible.</span>
                         </div>
-                        <span class="confidence-score-chip" id="sim-confidence-score">CONFIDENCE: 98.4%</span>
+                        <span class="confidence-score-chip" id="sim-confidence-score">CONFIDENCE: VERIFIED</span>
                     </div>
                 </div>
 
@@ -426,10 +377,10 @@ ID              COMMIT     TIMESTAMP                 INTENT SUMMARY
                 <div class="inspector-card">
                     <div class="inspector-section-label">CURRENT FILE & REQUIREMENT</div>
                     <div class="current-target-title" id="inspector-file-req">
-                        auth/middleware.go &gt; Authentication
+                        Select a file & requirement
                     </div>
-                    <div class="sub-target-info">
-                        <span class="badge blue">M4: 3/5 Verified</span>
+                    <div class="sub-target-info" id="inspector-sub-target">
+                        <span class="badge blue">Repo Context Active</span>
                     </div>
                 </div>
 
@@ -437,7 +388,7 @@ ID              COMMIT     TIMESTAMP                 INTENT SUMMARY
                 <div class="inspector-card">
                     <div class="inspector-section-label">📌 DECLARED INTENT</div>
                     <div class="intent-quote-box" id="inspector-intent-text">
-                        "Implement authentication for protected API routes"
+                        "Select a commit from history to view declared session intent."
                     </div>
                 </div>
 
@@ -445,9 +396,7 @@ ID              COMMIT     TIMESTAMP                 INTENT SUMMARY
                 <div class="inspector-card">
                     <div class="inspector-section-label text-green">✓ IMPLEMENTED & VERIFIED</div>
                     <ul class="verified-list" id="inspector-implemented-list">
-                        <li><span class="check-icon">✓</span> Authentication middleware structure</li>
-                        <li><span class="check-icon">✓</span> JWT validation with RS256 algorithm</li>
-                        <li><span class="check-icon">✓</span> Login endpoint exposed: <code>/api/v1/auth/login</code></li>
+                        <li><span class="check-icon">✓</span> Select a file or commit to inspect verified diffs.</li>
                     </ul>
                 </div>
 
@@ -455,7 +404,7 @@ ID              COMMIT     TIMESTAMP                 INTENT SUMMARY
                 <div class="inspector-card warning-border" id="inspector-gaps-card">
                     <div class="inspector-section-label text-warning">❌ INCOMPLETE / UNRESOLVED GAPS</div>
                     <ul class="gaps-list" id="inspector-incomplete-list">
-                        <li><span class="cross-icon">✗</span> Refresh-token flow (<code>/api/v1/auth/refresh</code>) missing token revocation storage handler.</li>
+                        <li><span class="cross-icon">✗</span> Checkpoint transcript status verified.</li>
                     </ul>
                 </div>
 
@@ -465,19 +414,19 @@ ID              COMMIT     TIMESTAMP                 INTENT SUMMARY
                     <div class="evidence-matrix-grid" id="inspector-evidence-grid">
                         <div class="evidence-box">
                             <span class="box-title">CHECKPOINT</span>
-                            <span class="box-val text-purple" id="ev-cp-val">81M1-ckp-892f</span>
+                            <span class="box-val text-purple" id="ev-cp-val">Git-only</span>
                         </div>
                         <div class="evidence-box">
                             <span class="box-title">COMMIT SHA</span>
-                            <span class="box-val font-mono" id="ev-commit-val">a81c92f [verified]</span>
+                            <span class="box-val font-mono" id="ev-commit-val">HEAD</span>
                         </div>
                         <div class="evidence-box">
                             <span class="box-title">UNIT TESTS</span>
-                            <span class="box-val text-green" id="ev-tests-val">3/3 Passing (tests/auth_test.go)</span>
+                            <span class="box-val text-green" id="ev-tests-val">System Tree Verified</span>
                         </div>
                         <div class="evidence-box">
                             <span class="box-title">GRAPH AST NODE</span>
-                            <span class="box-val text-blue" id="ev-graph-val">Linked: 14 downstream</span>
+                            <span class="box-val text-blue" id="ev-graph-val">AST Checked</span>
                         </div>
                     </div>
                 </div>
@@ -486,7 +435,44 @@ ID              COMMIT     TIMESTAMP                 INTENT SUMMARY
                 <div class="inspector-card highlight-card">
                     <div class="inspector-section-label text-blue">➔ RECOMMENDED NEXT ACTION:</div>
                     <div class="next-action-text" id="inspector-next-action">
-                        Implement refresh-token handling and token blacklist revocation.
+                        Select a file or run an agent session to generate checkpoints.
+                    </div>
+                </div>
+
+                <!-- DATABRICKS DEVELOPMENT ACTIVITY & ANALYTICS -->
+                <div class="inspector-card databricks-activity-box" style="border: 1px solid rgba(255, 120, 0, 0.3); background: rgba(255, 120, 0, 0.03); margin-bottom: 16px; padding: 12px; border-radius: 8px;">
+                    <div class="graph-impact-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                        <span class="impact-title" style="color: #ff9800; font-weight: 600; font-size: 12px; letter-spacing: 0.5px;">⚡ DATABRICKS DEVELOPMENT ACTIVITY</span>
+                        <span class="severity-chip" id="databricks-status-badge" style="background: rgba(255, 152, 0, 0.15); color: #ff9800; border: 1px solid rgba(255, 152, 0, 0.3); font-size: 10px; padding: 2px 6px; border-radius: 4px;">CHECKING...</span>
+                    </div>
+
+                    <!-- ANALYTICS METRICS GRID -->
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 12px;">
+                        <div style="background: rgba(0, 0, 0, 0.2); padding: 8px; border-radius: 6px; border: 1px solid rgba(255,255,255,0.05);">
+                            <div style="font-size: 10px; color: #888;">Analyzed Checkpoints</div>
+                            <div style="font-size: 16px; font-weight: bold; color: #fff;" id="db-stat-checkpoints">0</div>
+                        </div>
+                        <div style="background: rgba(0, 0, 0, 0.2); padding: 8px; border-radius: 6px; border: 1px solid rgba(255,255,255,0.05);">
+                            <div style="font-size: 10px; color: #888;">Analyzed Requirements</div>
+                            <div style="font-size: 16px; font-weight: bold; color: #4caf50;" id="db-stat-reqs">0</div>
+                        </div>
+                        <div style="background: rgba(0, 0, 0, 0.2); padding: 8px; border-radius: 6px; border: 1px solid rgba(255,255,255,0.05);">
+                            <div style="font-size: 10px; color: #888;">High Impact Changes</div>
+                            <div style="font-size: 16px; font-weight: bold; color: #ff9800;" id="db-stat-impact">0</div>
+                        </div>
+                        <div style="background: rgba(0, 0, 0, 0.2); padding: 8px; border-radius: 6px; border: 1px solid rgba(255,255,255,0.05);">
+                            <div style="font-size: 10px; color: #888;">Incomplete Contexts</div>
+                            <div style="font-size: 16px; font-weight: bold; color: #f44336;" id="db-stat-incomplete">0</div>
+                        </div>
+                    </div>
+
+                    <div style="font-size: 10px; color: #aaa; margin-bottom: 6px; display: flex; justify-content: space-between;">
+                        <span>HISTORICAL ANALYTICS FEED</span>
+                        <span id="db-last-sync-time" style="font-size: 9px; color: #666;">Sync: --:--:--</span>
+                    </div>
+
+                    <div id="databricks-activity-feed" style="max-height: 160px; overflow-y: auto; display: flex; flex-direction: column; gap: 6px;">
+                        <div class="text-muted" style="font-size: 11px; padding: 6px;">No development activity recorded yet.</div>
                     </div>
                 </div>
 
@@ -494,28 +480,17 @@ ID              COMMIT     TIMESTAMP                 INTENT SUMMARY
                 <div class="inspector-card graph-impact-box">
                     <div class="graph-impact-header">
                         <span class="impact-title">🕸️ ENTIRE GRAPH IMPACT ANALYSIS</span>
-                        <span class="severity-chip high" id="graph-severity-badge">SEVERITY: HIGH</span>
+                        <span class="severity-chip high" id="graph-severity-badge">STATUS: ACTIVE</span>
                     </div>
 
-                    <div class="ast-callchain-diagram">
+                    <div class="ast-callchain-diagram" id="ast-callchain-container">
                         <div class="ast-node root font-mono">
-                            <span>Σ ValidateToken()</span>
+                            <span>Repository File Graph</span>
                             <span class="node-badge">Source Verified</span>
                         </div>
-                        <div class="ast-arrow">↓ calls</div>
-                        <div class="ast-node target font-mono">
-                            <span>🔒 AuthMiddleware()</span>
-                            <span class="node-badge blue">Gateway Interceptor</span>
-                        </div>
-                        <div class="ast-arrow">↓ downstream (12 routes)</div>
-                        <div class="ast-downstream-list">
-                            <div class="downstream-item high-risk">
-                                <span>/api/v1/billing (4 endpoints)</span>
-                                <span class="risk-badge font-mono">High Risk</span>
-                            </div>
-                            <div class="downstream-item medium-risk">
-                                <span>/api/v1/users (6 endpoints)</span>
-                                <span class="risk-badge font-mono">Medium</span>
+                    </div>
+                </div>
+            </div>ium</span>
                             </div>
                         </div>
                     </div>

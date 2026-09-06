@@ -1,0 +1,30 @@
+[
+  {
+    "event_id": "evt-INTELLIGENCE_GENERATED-45c7501-No Checkpoint Recorded (Git-only)",
+    "event_type": "INTELLIGENCE_GENERATED",
+    "repository": "cli_btw",
+    "branch": "feature/stitch-frontend-ui",
+    "commit_sha": "45c75019cf569cb8f51b6c81c786995f9e34898b",
+    "checkpoint_id": "No Checkpoint Recorded (Git-only)",
+    "timestamp": "2026-09-06T11:01:12.729Z",
+    "requirement_id": "REQ-LIVE",
+    "requirement_status": "VERIFIED",
+    "context_completeness": "INCOMPLETE (PRIVACY REDACTED)",
+    "graph_impact_level": "HIGH",
+    "verification_status": "VERIFIED"
+  },
+  {
+    "event_id": "evt-CHECKPOINT_ANALYZED-45c7501-none",
+    "event_type": "CHECKPOINT_ANALYZED",
+    "repository": "cli_btw",
+    "branch": "feature/stitch-frontend-ui",
+    "commit_sha": "45c75019cf569cb8f51b6c81c786995f9e34898b",
+    "checkpoint_id": "none",
+    "timestamp": "2026-09-06T11:01:12.364Z",
+    "requirement_id": "REQ-LIVE",
+    "requirement_status": "VERIFIED",
+    "context_completeness": "INCOMPLETE (PRIVACY REDACTED)",
+    "graph_impact_level": "HIGH",
+    "verification_status": "VERIFIED"
+  }
+]

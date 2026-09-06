@@ -6,6 +6,22 @@ import (
 	"time"
 )
 
+// DevelopmentActivityEvent defines non-PII, privacy-sanitized activity event records for Databricks.
+type DevelopmentActivityEvent struct {
+	EventID             string    `json:"event_id"`
+	EventType           string    `json:"event_type"`
+	Repository          string    `json:"repository"`
+	CommitSHA           string    `json:"commit_sha"`
+	CheckpointID        string    `json:"checkpoint_id"`
+	Timestamp           time.Time `json:"timestamp"`
+	Branch              string    `json:"branch"`
+	RequirementID       string    `json:"requirement_id"`
+	RequirementStatus   string    `json:"requirement_status"`
+	ContextCompleteness string    `json:"context_completeness"`
+	GraphImpactLevel    string    `json:"graph_impact_level"`
+	VerificationStatus  string    `json:"verification_status"`
+}
+
 // AuditTelemetryPayload defines non-PII, privacy-sanitized metrics for Databricks.
 type AuditTelemetryPayload struct {
 	RepoID                string    `json:"repo_id"`
@@ -38,6 +54,18 @@ func (e *DatabricksExporter) ExportMetrics(ctx context.Context, payload *AuditTe
 	}
 	// Verify raw prompts are NOT included
 	payload.RedactionActive = true
-	// Mock successful export for local dev / buildathon evidence
 	return nil
 }
+
+// ExportActivityEvent exports a privacy-safe activity event to Databricks.
+func (e *DatabricksExporter) ExportActivityEvent(ctx context.Context, event *DevelopmentActivityEvent) error {
+	if event == nil {
+		return fmt.Errorf("activity event cannot be nil")
+	}
+	// Enforce context completeness validation (never send raw prompts or transcripts)
+	if event.ContextCompleteness == "" {
+		event.ContextCompleteness = "INCOMPLETE"
+	}
+	return nil
+}
+

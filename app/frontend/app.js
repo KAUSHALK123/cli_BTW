@@ -5,6 +5,7 @@ document.addEventListener('DOMContentLoaded', () => {
     let currentCommitSHA = '';
     let currentSimMode = 'complete';
     let livePollingInterval = null;
+    let activeOpenedFile = '';
 
     // UI CONTAINERS
     const setupScreen = document.getElementById('setup-screen-container');
@@ -38,6 +39,8 @@ document.addEventListener('DOMContentLoaded', () => {
         await loadActiveRepository();
         await refreshEntireStatus();
         await fetchCLIDiagnostics();
+        await fetchRepoFiles();
+        await fetchDatabricksData();
         
         // Start 3-second Live Activity Polling
         startLivePolling();
@@ -163,6 +166,14 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (verEl && status.version) {
                     verEl.textContent = `${status.version} (${status.cli_path})`;
                 }
+                const entireGate = document.getElementById('gate-entire-status');
+                if (entireGate) entireGate.textContent = status.enabled ? 'ENABLED' : 'DISABLED';
+
+                const cpGate = document.getElementById('gate-checkpoint-status');
+                if (cpGate) cpGate.textContent = `${status.checkpoints_count} Checkpoints`;
+
+                const graphGate = document.getElementById('gate-graph-status');
+                if (graphGate) graphGate.textContent = status.graph_status;
             }
         } catch (e) {
             console.error('Failed to fetch Entire CLI status:', e);
@@ -182,6 +193,100 @@ document.addEventListener('DOMContentLoaded', () => {
         } catch (e) {
             console.error('Failed to fetch CLI diagnostics:', e);
         }
+    }
+
+    async function fetchRepoFiles() {
+        const treeEl = document.getElementById('repo-file-tree');
+        if (!treeEl) return;
+
+        try {
+            const res = await fetch(`${API_BASE}/files`);
+            if (res.ok) {
+                const data = await res.json();
+                if (data.files && data.files.length > 0) {
+                    treeEl.innerHTML = data.files.map(f => {
+                        const icon = getFileIcon(f);
+                        return `<li class="tree-item file" data-path="${f}">
+                            <span class="item-icon">${icon}</span>
+                            <span class="file-name">${f}</span>
+                        </li>`;
+                    }).join('');
+
+                    // Add click listeners to file items
+                    treeEl.querySelectorAll('.tree-item.file').forEach(item => {
+                        item.addEventListener('click', () => {
+                            treeEl.querySelectorAll('.tree-item.file').forEach(i => i.classList.remove('active'));
+                            item.classList.add('active');
+                            const filePath = item.getAttribute('data-path');
+                            openFileContent(filePath);
+                        });
+                    });
+
+                    // Open first file by default if none opened
+                    if (!activeOpenedFile) {
+                        const firstFile = data.files.find(f => f.endsWith('.js') || f.endsWith('.go') || f.endsWith('.html') || f.endsWith('.md')) || data.files[0];
+                        openFileContent(firstFile);
+                    }
+                } else {
+                    treeEl.innerHTML = `<li class="tree-item text-muted">No source files found in workspace.</li>`;
+                }
+            }
+        } catch (e) {
+            console.error('Failed to fetch repo files:', e);
+            treeEl.innerHTML = `<li class="tree-item text-muted">Failed to load file tree.</li>`;
+        }
+    }
+
+    function getFileIcon(filename) {
+        if (filename.endsWith('.js') || filename.endsWith('.ts')) return '📜';
+        if (filename.endsWith('.go')) return '🐹';
+        if (filename.endsWith('.html') || filename.endsWith('.htm')) return '🌐';
+        if (filename.endsWith('.css')) return '🎨';
+        if (filename.endsWith('.json')) return '⚙️';
+        if (filename.endsWith('.md')) return '📝';
+        if (filename.endsWith('.bat') || filename.endsWith('.sh')) return '💻';
+        return '📄';
+    }
+
+    async function openFileContent(filePath) {
+        activeOpenedFile = filePath;
+        const targetBadge = document.getElementById('active-target-file');
+        if (targetBadge) targetBadge.textContent = filePath;
+
+        const tabFilename = document.getElementById('active-tab-filename');
+        if (tabFilename) tabFilename.textContent = filePath;
+
+        const metaPath = document.getElementById('editor-meta-path');
+        if (metaPath) metaPath.innerHTML = `<code>${currentRepo ? currentRepo.name : 'workspace'}</code> &gt; <strong>${filePath}</strong>`;
+
+        const targetTitle = document.getElementById('inspector-file-req');
+        if (targetTitle) targetTitle.textContent = `${filePath}`;
+
+        try {
+            const res = await fetch(`${API_BASE}/file-content?path=${encodeURIComponent(filePath)}`);
+            if (res.ok) {
+                const fileData = await res.json();
+                const codeBlock = document.getElementById('code-display-block');
+                if (codeBlock && fileData.content) {
+                    const lines = fileData.content.split('\n');
+                    codeBlock.innerHTML = lines.map((l, i) => {
+                        const escaped = escapeHtml(l);
+                        return `<span class="line"><span class="ln">${i + 1}</span> ${escaped}</span>`;
+                    }).join('\n');
+                }
+            }
+        } catch (e) {
+            console.error('Failed to open file content:', e);
+        }
+    }
+
+    function escapeHtml(text) {
+        return text
+            .replace(/&/g, "&amp;")
+            .replace(/</g, "&lt;")
+            .replace(/>/g, "&gt;")
+            .replace(/"/g, "&quot;")
+            .replace(/'/g, "&#039;");
     }
 
     async function enableEntireCLIAction() {
@@ -204,11 +309,31 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     async function selectRepositoryAction() {
-        await loadActiveRepository();
-        if (currentRepo) {
-            alert(`📂 Workspace Repository Detected:\n\nName: ${currentRepo.name}\nPath: ${currentRepo.local_path}\nBranch: ${currentRepo.current_branch}\nRemote: ${currentRepo.remote_url}`);
-        } else {
-            alert('📂 Local Git Repository active in workspace directory.');
+        const newPath = prompt('📂 Enter local repository path to switch workspace:', currentRepo ? currentRepo.local_path : 'd:\\PROJECTS\\BTW_cli\\cli_btw');
+        if (newPath && newPath.trim()) {
+            try {
+                const res = await fetch(`${API_BASE}/select-repository`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ repoPath: newPath.trim() })
+                });
+
+                if (res.ok) {
+                    const data = await res.json();
+                    alert(`✓ Workspace Switched to: ${data.repo.local_path}\nName: ${data.repo.name}\nBranch: ${data.repo.current_branch}`);
+                    activeOpenedFile = '';
+                    await loadActiveRepository();
+                    await refreshEntireStatus();
+                    await fetchCLIDiagnostics();
+                    await fetchRepoFiles();
+                    await refreshWorkspaceData();
+                } else {
+                    const err = await res.json();
+                    alert(`❌ Error switching repository: ${err.error}`);
+                }
+            } catch (e) {
+                alert(`Error: ${e.message}`);
+            }
         }
     }
 
@@ -284,20 +409,20 @@ document.addEventListener('DOMContentLoaded', () => {
 
         if (isComplete) {
             if (scoreChip) {
-                scoreChip.textContent = 'CONFIDENCE: 98.4%';
+                scoreChip.textContent = 'CONFIDENCE: VERIFIED';
                 scoreChip.className = 'confidence-score-chip';
             }
             if (descText) {
-                descText.textContent = 'High confidence ✓ Full AST graph symbols, prompt origins, passing tests, runtime telemetry accessible.';
+                descText.textContent = 'High confidence ✓ Full AST graph symbols, commit diffs, passing tests accessible.';
             }
             if (lensCard) lensCard.style.borderColor = 'rgba(139, 92, 246, 0.4)';
         } else {
             if (scoreChip) {
-                scoreChip.textContent = 'CONFIDENCE: 42.1% [REDACTED]';
+                scoreChip.textContent = 'CONFIDENCE: REDACTED';
                 scoreChip.className = 'confidence-score-chip redacted';
             }
             if (descText) {
-                descText.textContent = '⚠️ INCOMPLETE CONTEXT: Prompt transcript redacted for privacy. Verification based on commit diffs & tests only.';
+                descText.textContent = '⚠️ REDACTED CONTEXT: Prompt transcript redacted for privacy. Verification based on commit diffs & tests only.';
             }
             if (lensCard) lensCard.style.borderColor = 'rgba(239, 68, 68, 0.5)';
         }
@@ -322,9 +447,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
                 const remoteEl = document.getElementById('setup-git-remote');
                 if (remoteEl) {
-                    remoteEl.textContent = currentRepo.remote_url;
+                    remoteEl.textContent = currentRepo.remote_url || currentRepo.local_path;
                     remoteEl.href = currentRepo.url;
                 }
+
+                const sidebarBranch = document.getElementById('sidebar-branch-tag');
+                if (sidebarBranch) sidebarBranch.textContent = `GIT: ${currentRepo.current_branch.toUpperCase()}`;
             }
         } catch (e) {
             console.warn('Failed to load repository info:', e);
@@ -336,6 +464,7 @@ document.addEventListener('DOMContentLoaded', () => {
         await fetchMilestonesData();
         await fetchIntelligenceData();
         await fetchGraphData();
+        await fetchDatabricksData();
     }
 
     async function fetchCommits() {
@@ -414,6 +543,11 @@ document.addEventListener('DOMContentLoaded', () => {
             `).join('');
         }
 
+        const lensVal = document.getElementById('lens-impl-val');
+        if (lensVal && intel.implemented && intel.implemented.length > 0) {
+            lensVal.textContent = intel.implemented[0];
+        }
+
         // Incomplete / Gaps
         const gapList = document.getElementById('inspector-incomplete-list');
         if (gapList && intel.incomplete) {
@@ -444,6 +578,27 @@ document.addEventListener('DOMContentLoaded', () => {
                 const evGraph = document.getElementById('ev-graph-val');
                 if (evGraph && findings.length > 0) {
                     evGraph.textContent = findings[0].id === 'graph-unindexed' ? 'Unindexed' : `Linked: ${findings.length} downstream`;
+                }
+
+                // Render graph diagram
+                const callchainContainer = document.getElementById('ast-callchain-container');
+                if (callchainContainer && findings.length > 0) {
+                    const f = findings[0];
+                    callchainContainer.innerHTML = `
+                        <div class="ast-node root font-mono">
+                            <span>${f.query_change}</span>
+                            <span class="node-badge">${f.verification_status}</span>
+                        </div>
+                        <div class="ast-arrow">↓ downstream files</div>
+                        <div class="ast-downstream-list">
+                            ${(f.affected_files || []).map(file => `
+                                <div class="downstream-item medium-risk">
+                                    <span>${file}</span>
+                                    <span class="risk-badge font-mono">Verified Node</span>
+                                </div>
+                            `).join('')}
+                        </div>
+                    `;
                 }
             }
         } catch (e) {
@@ -492,6 +647,86 @@ document.addEventListener('DOMContentLoaded', () => {
         if (res.ok) {
             const handoff = await res.json();
             alert(`Handoff Package Generated:\n\nOriginal Intent: "${handoff.original_intent}"\nRecommended Next Action: "${handoff.recommended_next_action}"`);
+        }
+    }
+
+    async function fetchDatabricksData() {
+        try {
+            const [statusRes, activityRes, analyticsRes] = await Promise.all([
+                fetch(`${API_BASE}/databricks/status`),
+                fetch(`${API_BASE}/databricks/activity`),
+                fetch(`${API_BASE}/databricks/analytics`)
+            ]);
+
+            if (statusRes.ok) {
+                const status = await statusRes.json();
+                const badge = document.getElementById('databricks-status-badge');
+                if (badge) {
+                    if (status.status === 'CONNECTED') {
+                        badge.textContent = '● CONNECTED';
+                        badge.style.background = 'rgba(76, 175, 80, 0.15)';
+                        badge.style.color = '#4caf50';
+                        badge.style.borderColor = 'rgba(76, 175, 80, 0.3)';
+                    } else {
+                        badge.textContent = '○ NOT CONFIGURABLE';
+                        badge.style.background = 'rgba(255, 152, 0, 0.15)';
+                        badge.style.color = '#ff9800';
+                        badge.style.borderColor = 'rgba(255, 152, 0, 0.3)';
+                    }
+                }
+            }
+
+            if (analyticsRes.ok) {
+                const analytics = await analyticsRes.json();
+                const elCp = document.getElementById('db-stat-checkpoints');
+                const elReq = document.getElementById('db-stat-reqs');
+                const elImpact = document.getElementById('db-stat-impact');
+                const elIncomplete = document.getElementById('db-stat-incomplete');
+
+                if (elCp) elCp.textContent = analytics.checkpoints_analyzed || 0;
+                if (elReq) elReq.textContent = analytics.requirements_analyzed || 0;
+                if (elImpact) elImpact.textContent = analytics.high_impact_changes || 0;
+                if (elIncomplete) elIncomplete.textContent = analytics.incomplete_context_events || 0;
+            }
+
+            if (activityRes.ok) {
+                const data = await activityRes.json();
+                const feed = document.getElementById('databricks-activity-feed');
+                const syncTime = document.getElementById('db-last-sync-time');
+
+                if (syncTime) {
+                    const now = new Date();
+                    syncTime.textContent = `Sync: ${now.toTimeString().split(' ')[0]}`;
+                }
+
+                if (feed) {
+                    if (!data.events || data.events.length === 0) {
+                        feed.innerHTML = `<div class="text-muted" style="font-size: 11px; padding: 6px;">No development activity recorded yet.</div>`;
+                    } else {
+                        feed.innerHTML = data.events.slice(0, 10).map(evt => {
+                            const isRedacted = String(evt.context_completeness).includes('INCOMPLETE') || String(evt.context_completeness).includes('REDACTED');
+                            return `
+                                <div style="background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.06); padding: 6px 8px; border-radius: 4px; font-size: 11px;">
+                                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2px;">
+                                        <strong style="color: #ffb74d;">⚡ ${evt.event_type.replace('_', ' ')}</strong>
+                                        <span style="font-size: 9px; color: ${isRedacted ? '#f44336' : '#81c784'}; border: 1px solid ${isRedacted ? 'rgba(244,67,54,0.3)' : 'rgba(129,199,132,0.3)'}; padding: 1px 4px; border-radius: 3px;">
+                                            ${isRedacted ? 'REDACTED CONTEXT' : 'COMPLETE CONTEXT'}
+                                        </span>
+                                    </div>
+                                    <div style="color: #ccc; font-family: monospace; font-size: 10px;">
+                                        cp: ${evt.checkpoint_id.substring(0, 15)} | sha: ${evt.commit_sha.substring(0, 7)}
+                                    </div>
+                                    <div style="font-size: 9px; color: #888; margin-top: 2px;">
+                                        Repo: ${evt.repository} | Impact: ${evt.graph_impact_level}
+                                    </div>
+                                </div>
+                            `;
+                        }).join('');
+                    }
+                }
+            }
+        } catch (e) {
+            console.error('Failed to fetch Databricks data:', e);
         }
     }
 });
