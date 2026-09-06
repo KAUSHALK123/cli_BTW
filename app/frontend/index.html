@@ -177,10 +177,10 @@
 
                 <!-- Tab 3: Requirements -->
                 <section id="tab-requirements" class="tab-pane">
-                    <div class="card glass margin-bottom">
-                        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;">
+                    <div class="card glass" style="margin-bottom: 20px;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; margin-bottom: 12px;">
                             <div>
-                                <h3 style="margin: 0;">GitHub Milestone Requirements Workflow</h3>
+                                <h3 style="margin: 0;">🎯 GitHub Milestones & Requirements</h3>
                                 <p style="color: var(--text-secondary); margin: 4px 0 0 0; font-size: 0.9em;">Convert GitHub milestones & issues into actionable Checkpoint Intelligence requirements</p>
                             </div>
                             <div style="display: flex; gap: 8px; align-items: center;">
@@ -191,23 +191,29 @@
                             </div>
                         </div>
                         <div id="github-status-banner" style="margin-top: 12px; display: none;"></div>
+                        <div id="milestones-container" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px; margin-top: 12px;">
+                            <div class="spinner">Loading GitHub milestones...</div>
+                        </div>
                     </div>
-
                     <div class="card glass">
-                        <h3>Requirement & Milestone Verification Matrix</h3>
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+                            <h3 style="margin: 0;">Requirement & Issue Verification Matrix</h3>
+                            <span id="selected-milestone-title" style="color: var(--accent-blue); font-weight: 500; font-size: 0.9rem;"></span>
+                        </div>
                         <div class="table-container">
                             <table class="data-table">
                                 <thead>
                                     <tr>
-                                        <th>Ref #</th>
-                                        <th>Title & Goal</th>
+                                        <th>GitHub Reference</th>
+                                        <th>Requirement Title & Goal</th>
                                         <th>Milestone</th>
                                         <th>State / Status</th>
-                                        <th>Verification Evidence</th>
+                                        <th>Labels</th>
+                                        <th>Action / Evidence</th>
                                     </tr>
                                 </thead>
                                 <tbody id="requirements-table-body">
-                                    <tr><td colspan="5" class="text-center">Loading requirements...</td></tr>
+                                    <tr><td colspan="6" class="text-center">Loading requirements...</td></tr>
                                 </tbody>
                             </table>
                         </div>

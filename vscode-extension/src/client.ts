@@ -20,12 +20,33 @@ export interface CheckpointItem {
     verification_info: string;
 }
 
+export interface MilestoneItem {
+    id: string;
+    number: number;
+    title: string;
+    description: string;
+    state: string;
+    due_date?: string;
+    url: string;
+    open_issues: number;
+    closed_issues: number;
+    associated_issues?: RequirementItem[];
+}
+
 export interface RequirementItem {
     id: string;
     title: string;
     description: string;
     status: string;
-    verification_evidence: string;
+    verification_evidence?: string;
+    github_issue_number?: number;
+    github_milestone_id?: string;
+    github_milestone_number?: number;
+    github_url?: string;
+    github_state?: string;
+    github_labels?: string[];
+    github_assignees?: string[];
+    milestone_title?: string;
 }
 
 export interface GraphFindingItem {
@@ -143,8 +164,20 @@ export class CheckpointApiClient {
         return this.fetchJson<CommitDevelopmentContextItem>(`/api/repositories/${repoId}/commits/${sha}/context`);
     }
 
+    public async getMilestones(repoId: string = 'repo-cli-btw'): Promise<MilestoneItem[]> {
+        return this.fetchJson<MilestoneItem[]>(`/api/repositories/${repoId}/milestones`);
+    }
+
+    public async getMilestoneIssues(milestoneNumber: number, repoId: string = 'repo-cli-btw'): Promise<RequirementItem[]> {
+        return this.fetchJson<RequirementItem[]>(`/api/repositories/${repoId}/milestones/${milestoneNumber}/issues`);
+    }
+
     public async getRequirements(repoId: string = 'repo-cli-btw'): Promise<RequirementItem[]> {
         return this.fetchJson<RequirementItem[]>(`/api/repositories/${repoId}/requirements`);
+    }
+
+    public async getRequirement(issueNumber: number, repoId: string = 'repo-cli-btw'): Promise<RequirementItem> {
+        return this.fetchJson<RequirementItem>(`/api/repositories/${repoId}/requirements/${issueNumber}`);
     }
 
     public async getGraphFindings(repoId: string = 'repo-cli-btw'): Promise<GraphFindingItem[]> {

@@ -25,5 +25,15 @@ type Requirement struct {
 	GitHubIssueRef       string            `json:"github_issue_ref,omitempty"`
 	RepositoryID         string            `json:"repository_id,omitempty"`
 	State                string            `json:"state,omitempty"` // "open", "closed"
+
+	// GitHub specific references to ensure trace-back capabilities
+	GitHubIssueNumber     int      `json:"github_issue_number,omitempty"`
+	GitHubMilestoneID     string   `json:"github_milestone_id,omitempty"`
+	GitHubMilestoneNumber int      `json:"github_milestone_number,omitempty"`
+	GitHubURL             string   `json:"github_url,omitempty"`
+	GitHubState           string   `json:"github_state,omitempty"` // "open", "closed"
+	GitHubLabels          []string `json:"github_labels,omitempty"`
+	GitHubAssignees       []string `json:"github_assignees,omitempty"`
+	MilestoneTitle        string   `json:"milestone_title,omitempty"`
 }
 
