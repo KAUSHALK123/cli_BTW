@@ -106,6 +106,8 @@ export interface ImpactAnalysisItem {
     available_evidence: string[];
     missing_evidence: string[];
     analysis_conclusion: string;
+}
+
 export interface EvidenceItem {
     available: boolean;
     summary: string;

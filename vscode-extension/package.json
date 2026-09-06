@@ -10,35 +10,53 @@
   "categories": [
     "Other"
   ],
-  "main": "./extension.js",
+  "main": "./out/extension.js",
   "activationEvents": [
-    "onView:entire-requirements-view",
+    "onView:checkpoint-intelligence-sidebar",
     "onStartupFinished"
   ],
   "contributes": {
     "viewsContainers": {
       "activitybar": [
         {
-          "id": "entire-intelligence-sidebar",
-          "title": "Entire Intelligence",
-          "icon": "$(shield)"
+          "id": "checkpoint-intelligence-container",
+          "title": "Checkpoint Intelligence",
+          "icon": "$(shield-check)"
         }
       ]
     },
     "views": {
-      "entire-intelligence-sidebar": [
+      "checkpoint-intelligence-container": [
         {
-          "id": "entire-requirements-view",
-          "name": "GitHub Requirement Workflow",
+          "id": "checkpoint-intelligence-sidebar",
+          "name": "Audit & Handoff Dashboard",
           "type": "webview"
         }
       ]
     },
     "commands": [
       {
-        "command": "entire.openRequirementsView",
-        "title": "Entire Intelligence: Open Requirement Workflow"
+        "command": "entire.audit.run",
+        "title": "Checkpoint Intelligence: Refresh Audit",
+        "icon": "$(refresh)"
+      },
+      {
+        "command": "entire.audit.enable",
+        "title": "Checkpoint Intelligence: Connect/Enable Entire"
+      },
+      {
+        "command": "entire.audit.openDashboard",
+        "title": "Checkpoint Intelligence: Open Web Dashboard"
       }
     ]
+  },
+  "scripts": {
+    "vscode:prepublish": "tsc -p ./",
+    "compile": "tsc -p ./"
+  },
+  "devDependencies": {
+    "@types/node": "^16.11.7",
+    "@types/vscode": "^1.75.0",
+    "typescript": "^4.9.4"
   }
 }
