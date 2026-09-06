@@ -17,14 +17,9 @@ type Requirement struct {
 	Description          string            `json:"description"`
 	Status               RequirementStatus `json:"status"`
 	Source               string            `json:"source"`
-	RelatedCheckpoints   []string          `json:"related_checkpoints,omitempty"`
-	RelatedFiles         []string          `json:"related_files,omitempty"`
-	VerificationEvidence string            `json:"verification_evidence,omitempty"`
-	Milestone            string            `json:"milestone,omitempty"`
-	MilestoneNumber      int               `json:"milestone_number,omitempty"`
-	GitHubIssueRef       string            `json:"github_issue_ref,omitempty"`
-	RepositoryID         string            `json:"repository_id,omitempty"`
-	State                string            `json:"state,omitempty"` // "open", "closed"
+	RelatedCheckpoints   []string          `json:"related_checkpoints"`
+	RelatedFiles         []string          `json:"related_files"`
+	VerificationEvidence string            `json:"verification_evidence"`
 
 	// GitHub specific references to ensure trace-back capabilities
 	GitHubIssueNumber     int      `json:"github_issue_number,omitempty"`

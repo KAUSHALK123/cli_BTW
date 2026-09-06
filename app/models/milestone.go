@@ -10,7 +10,7 @@ type Milestone struct {
 	Description      string        `json:"description"`
 	State            string        `json:"state"` // "open", "closed"
 	DueDate          *time.Time    `json:"due_date,omitempty"`
-	URL              string        `json:"url,omitempty"`
+	URL              string        `json:"url"`
 	OpenIssues       int           `json:"open_issues"`
 	ClosedIssues     int           `json:"closed_issues"`
 	AssociatedIssues []Requirement `json:"associated_issues,omitempty"`

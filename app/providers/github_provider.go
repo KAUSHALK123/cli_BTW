@@ -15,17 +15,16 @@ import (
 )
 
 var (
-	ErrRepositoryNotFound  = errors.New("github repository not found or inaccessible")
-	ErrMilestoneNotFound   = errors.New("github milestone not found")
+	ErrRepositoryNotFound = errors.New("github repository not found or inaccessible")
+	ErrMilestoneNotFound  = errors.New("github milestone not found")
 	ErrRequirementNotFound = errors.New("github issue requirement not found")
-	ErrGitHubRateLimit     = errors.New("github api rate limit exceeded")
+	ErrGitHubRateLimit    = errors.New("github api rate limit exceeded")
 )
 
 // GitHubProvider defines the interface for interacting with GitHub repositories.
 type GitHubProvider interface {
 	GetRepositoryInfo(ctx context.Context, owner, repo string) (*models.Repository, error)
 	GetMilestones(ctx context.Context, owner, repo string) ([]models.Milestone, error)
-	GetMilestoneRequirements(ctx context.Context, owner, repo string, milestoneNumber int) ([]models.Requirement, error)
 	GetMilestoneIssues(ctx context.Context, owner, repo string, milestoneNumber int) ([]models.Requirement, error)
 	GetRequirementByIssueNumber(ctx context.Context, owner, repo string, issueNumber int) (*models.Requirement, error)
 }
@@ -94,10 +93,6 @@ func NewDevGitHubProvider() GitHubProvider {
 		GitHubLabels:          []string{"foundation", "core"},
 		GitHubAssignees:       []string{"KAUSHALK123"},
 		MilestoneTitle:        m1.Title,
-		Milestone:             m1.Title,
-		MilestoneNumber:       1,
-		GitHubIssueRef:        "1",
-		State:                 "closed",
 	}
 
 	req6 := models.Requirement{
@@ -117,10 +112,6 @@ func NewDevGitHubProvider() GitHubProvider {
 		GitHubLabels:          []string{"enhancement", "phase-2"},
 		GitHubAssignees:       []string{"KAUSHALK123"},
 		MilestoneTitle:        m2.Title,
-		Milestone:             m2.Title,
-		MilestoneNumber:       2,
-		GitHubIssueRef:        "6",
-		State:                 "open",
 	}
 
 	req8 := models.Requirement{
@@ -140,10 +131,6 @@ func NewDevGitHubProvider() GitHubProvider {
 		GitHubLabels:          []string{"enhancement", "phase-2"},
 		GitHubAssignees:       []string{"KAUSHALK123"},
 		MilestoneTitle:        m2.Title,
-		Milestone:             m2.Title,
-		MilestoneNumber:       2,
-		GitHubIssueRef:        "8",
-		State:                 "open",
 	}
 
 	req15 := models.Requirement{
@@ -163,10 +150,6 @@ func NewDevGitHubProvider() GitHubProvider {
 		GitHubLabels:          []string{"feature", "phase-3"},
 		GitHubAssignees:       []string{"KAUSHALK123"},
 		MilestoneTitle:        m3.Title,
-		Milestone:             m3.Title,
-		MilestoneNumber:       3,
-		GitHubIssueRef:        "15",
-		State:                 "open",
 	}
 
 	m1.AssociatedIssues = []models.Requirement{req1}
@@ -192,7 +175,7 @@ func (p *DevGitHubProvider) GetRepositoryInfo(ctx context.Context, owner, repo s
 		Name:          repo,
 		Owner:         owner,
 		URL:           "https://github.com/" + owner + "/" + repo,
-		LocalPath:     ".",
+		LocalPath:     "d:\\PROJECTS\\BTW_cli\\cli_btw",
 		DefaultBranch: "main",
 		Description:   "Bengaluru Tech Week Buildathon 2026 — Entire Checkpoint Intelligence Application",
 	}, nil
@@ -216,14 +199,10 @@ func (p *DevGitHubProvider) GetMilestoneIssues(ctx context.Context, owner, repo 
 	return issues, nil
 }
 
-func (p *DevGitHubProvider) GetMilestoneRequirements(ctx context.Context, owner, repo string, milestoneNumber int) ([]models.Requirement, error) {
-	return p.GetMilestoneIssues(ctx, owner, repo, milestoneNumber)
-}
-
 func (p *DevGitHubProvider) GetRequirementByIssueNumber(ctx context.Context, owner, repo string, issueNumber int) (*models.Requirement, error) {
 	for _, reqList := range p.issues {
 		for _, req := range reqList {
-			if req.GitHubIssueNumber == issueNumber || req.ID == strconv.Itoa(issueNumber) {
+			if req.GitHubIssueNumber == issueNumber {
 				return &req, nil
 			}
 		}
@@ -233,37 +212,25 @@ func (p *DevGitHubProvider) GetRequirementByIssueNumber(ctx context.Context, own
 
 // LiveGitHubProvider connects to GitHub REST API using http.Client.
 type LiveGitHubProvider struct {
-	client  *http.Client
-	baseURL string
+	client *http.Client
 }
 
-func NewLiveGitHubProvider(client ...*http.Client) GitHubProvider {
-	c := &http.Client{Timeout: 10 * time.Second}
-	if len(client) > 0 && client[0] != nil {
-		c = client[0]
+func NewLiveGitHubProvider(client *http.Client) GitHubProvider {
+	if client == nil {
+		client = &http.Client{Timeout: 10 * time.Second}
 	}
-	return &LiveGitHubProvider{
-		client:  c,
-		baseURL: "https://api.github.com",
-	}
-}
-
-func NewLiveGitHubProviderWithBaseURL(baseURL string) *LiveGitHubProvider {
-	return &LiveGitHubProvider{
-		client:  &http.Client{Timeout: 10 * time.Second},
-		baseURL: baseURL,
-	}
+	return &LiveGitHubProvider{client: client}
 }
 
 type ghMilestoneResponse struct {
-	Number       int        `json:"number"`
-	Title        string     `json:"title"`
-	Description  string     `json:"description"`
-	State        string     `json:"state"`
+	Number       int       `json:"number"`
+	Title        string    `json:"title"`
+	Description  string    `json:"description"`
+	State        string    `json:"state"`
 	DueOn        *time.Time `json:"due_on"`
-	HTMLURL      string     `json:"html_url"`
-	OpenIssues   int        `json:"open_issues"`
-	ClosedIssues int        `json:"closed_issues"`
+	HTMLURL      string    `json:"html_url"`
+	OpenIssues   int       `json:"open_issues"`
+	ClosedIssues int       `json:"closed_issues"`
 }
 
 type ghIssueResponse struct {
@@ -296,11 +263,7 @@ func (p *LiveGitHubProvider) createRequest(ctx context.Context, url string) (*ht
 }
 
 func (p *LiveGitHubProvider) GetRepositoryInfo(ctx context.Context, owner, repo string) (*models.Repository, error) {
-	baseURL := p.baseURL
-	if baseURL == "" {
-		baseURL = "https://api.github.com"
-	}
-	url := fmt.Sprintf("%s/repos/%s/%s", baseURL, owner, repo)
+	url := fmt.Sprintf("https://api.github.com/repos/%s/%s", owner, repo)
 	req, err := p.createRequest(ctx, url)
 	if err != nil {
 		return nil, err
@@ -324,12 +287,10 @@ func (p *LiveGitHubProvider) GetRepositoryInfo(ctx context.Context, owner, repo 
 
 	var data struct {
 		Name          string `json:"name"`
-		Owner         struct{ Login string } `json:"owner"`
 		HTMLURL       string `json:"html_url"`
 		DefaultBranch string `json:"default_branch"`
 		Description   string `json:"description"`
 	}
-
 	if err := json.NewDecoder(resp.Body).Decode(&data); err != nil {
 		return nil, err
 	}
@@ -345,11 +306,7 @@ func (p *LiveGitHubProvider) GetRepositoryInfo(ctx context.Context, owner, repo 
 }
 
 func (p *LiveGitHubProvider) GetMilestones(ctx context.Context, owner, repo string) ([]models.Milestone, error) {
-	baseURL := p.baseURL
-	if baseURL == "" {
-		baseURL = "https://api.github.com"
-	}
-	url := fmt.Sprintf("%s/repos/%s/%s/milestones?state=all", baseURL, owner, repo)
+	url := fmt.Sprintf("https://api.github.com/repos/%s/%s/milestones?state=all", owner, repo)
 	req, err := p.createRequest(ctx, url)
 	if err != nil {
 		return nil, err
@@ -394,11 +351,7 @@ func (p *LiveGitHubProvider) GetMilestones(ctx context.Context, owner, repo stri
 }
 
 func (p *LiveGitHubProvider) GetMilestoneIssues(ctx context.Context, owner, repo string, milestoneNumber int) ([]models.Requirement, error) {
-	baseURL := p.baseURL
-	if baseURL == "" {
-		baseURL = "https://api.github.com"
-	}
-	url := fmt.Sprintf("%s/repos/%s/%s/issues?milestone=%d&state=all", baseURL, owner, repo, milestoneNumber)
+	url := fmt.Sprintf("https://api.github.com/repos/%s/%s/issues?milestone=%d&state=all", owner, repo, milestoneNumber)
 	req, err := p.createRequest(ctx, url)
 	if err != nil {
 		return nil, err
@@ -460,26 +413,14 @@ func (p *LiveGitHubProvider) GetMilestoneIssues(ctx context.Context, owner, repo
 			GitHubLabels:          labels,
 			GitHubAssignees:       assignees,
 			MilestoneTitle:        msTitle,
-			Milestone:             msTitle,
-			MilestoneNumber:       milestoneNumber,
-			GitHubIssueRef:        strconv.Itoa(issue.Number),
-			State:                 issue.State,
 		})
 	}
 
 	return reqs, nil
 }
 
-func (p *LiveGitHubProvider) GetMilestoneRequirements(ctx context.Context, owner, repo string, milestoneNumber int) ([]models.Requirement, error) {
-	return p.GetMilestoneIssues(ctx, owner, repo, milestoneNumber)
-}
-
 func (p *LiveGitHubProvider) GetRequirementByIssueNumber(ctx context.Context, owner, repo string, issueNumber int) (*models.Requirement, error) {
-	baseURL := p.baseURL
-	if baseURL == "" {
-		baseURL = "https://api.github.com"
-	}
-	url := fmt.Sprintf("%s/repos/%s/%s/issues/%d", baseURL, owner, repo, issueNumber)
+	url := fmt.Sprintf("https://api.github.com/repos/%s/%s/issues/%d", owner, repo, issueNumber)
 	req, err := p.createRequest(ctx, url)
 	if err != nil {
 		return nil, err
@@ -541,10 +482,6 @@ func (p *LiveGitHubProvider) GetRequirementByIssueNumber(ctx context.Context, ow
 		GitHubLabels:          labels,
 		GitHubAssignees:       assignees,
 		MilestoneTitle:        msTitle,
-		Milestone:             msTitle,
-		MilestoneNumber:       msNum,
-		GitHubIssueRef:        strconv.Itoa(issue.Number),
-		State:                 issue.State,
 	}, nil
 }
 
