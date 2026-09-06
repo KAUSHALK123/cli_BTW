@@ -43,6 +43,33 @@ func TestCommitsHandler_List(t *testing.T) {
 	}
 }
 
+func TestRepositoriesHandler_Endpoints(t *testing.T) {
+	handler := api.NewAPIHandler(nil)
+	tests := []struct {
+		name     string
+		path     string
+		wantCode int
+	}{
+		{"List Repositories", "/api/repositories", http.StatusOK},
+		{"Single Repository", "/api/repositories/repo-cli-btw", http.StatusOK},
+		{"Checkpoints Endpoint", "/api/repositories/repo-cli-btw/checkpoints", http.StatusOK},
+		{"Requirements Endpoint", "/api/repositories/repo-cli-btw/requirements", http.StatusOK},
+		{"Graph Endpoint", "/api/repositories/repo-cli-btw/graph", http.StatusOK},
+		{"Handoff Endpoint", "/api/repositories/repo-cli-btw/handoff", http.StatusOK},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			req := httptest.NewRequest("GET", tt.path, nil)
+			rec := httptest.NewRecorder()
+			handler.RepositoriesHandler(rec, req)
+			if rec.Code != tt.wantCode {
+				t.Errorf("expected status %d, got %d", tt.wantCode, rec.Code)
+			}
+		})
+	}
+}
+
 func TestCommitsHandler_Context_Available(t *testing.T) {
 	handler := api.NewAPIHandler(nil)
 	req := httptest.NewRequest("GET", "/api/repositories/repo-cli-btw/commits/3dbdf8b83c39/context", nil)
@@ -94,5 +121,26 @@ func TestCommitsHandler_Context_Unavailable(t *testing.T) {
 
 	if devCtx.MissingContextReason == "" {
 		t.Errorf("Expected explicit missing context reason")
+	}
+}
+
+func TestAPIErrorFormat(t *testing.T) {
+	rec := httptest.NewRecorder()
+	WriteAPIError(rec, http.StatusBadRequest, "INVALID_INPUT", "Invalid parameter supplied")
+
+	if rec.Code != http.StatusBadRequest {
+		t.Errorf("expected status 400, got %d", rec.Code)
+	}
+
+	var errResp APIErrorResponse
+	if err := json.Unmarshal(rec.Body.Bytes(), &errResp); err != nil {
+		t.Fatalf("failed to parse API error JSON: %v", err)
+	}
+
+	if errResp.Error.Code != "INVALID_INPUT" {
+		t.Errorf("expected error code INVALID_INPUT, got %s", errResp.Error.Code)
+	}
+	if errResp.Error.Message != "Invalid parameter supplied" {
+		t.Errorf("expected message 'Invalid parameter supplied', got %s", errResp.Error.Message)
 	}
 }
