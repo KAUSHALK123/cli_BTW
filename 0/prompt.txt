@@ -1,0 +1,1 @@
+Inspect this repository and explain its current architecture. Do not modify any files.
