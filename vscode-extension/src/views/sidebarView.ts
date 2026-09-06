@@ -62,6 +62,11 @@ export class CheckpointSidebarViewProvider implements vscode.WebviewViewProvider
             const checkpoints = await this._apiClient.getCheckpoints();
             const commits = await this._apiClient.getCommits();
             const graph = await this._apiClient.getGraphFindings();
+            const impact = await this._apiClient.getImpactAnalysis();
+            const handoff = await this._apiClient.getHandoff();
+
+            this._view.webview.html = this.getHtmlForWebview(readiness, reqs, checkpoints, commits, graph, impact, handoff);
+            const intel = await this._apiClient.getIntelligence();
             const handoff = await this._apiClient.getHandoff();
             const intel = await this._apiClient.getIntelligence(this._selectedSha);
 
@@ -112,6 +117,8 @@ export class CheckpointSidebarViewProvider implements vscode.WebviewViewProvider
                 <meta charset="UTF-8">
                 <style>
                     body { font-family: var(--vscode-font-family); padding: 12px; color: var(--vscode-foreground); line-height: 1.4; }
+                    .badge { display: inline-block; padding: 2px 6px; border-radius: 3px; font-size: 0.75em; font-weight: bold; background: #4CAF50; color: #fff; }
+                    .badge-orange { background: #FF9800; }
                     .badge { display: inline-block; padding: 2px 6px; border-radius: 3px; font-size: 0.75em; font-weight: bold; color: #fff; }
                     .hero-card { background: var(--vscode-editor-background); border: 2px solid var(--vscode-focusBorder); padding: 12px; margin-bottom: 14px; border-radius: 6px; }
                     .card { background: var(--vscode-editor-background); border: 1px solid var(--vscode-widget-border); padding: 10px; margin-bottom: 12px; border-radius: 6px; }
@@ -179,6 +186,28 @@ export class CheckpointSidebarViewProvider implements vscode.WebviewViewProvider
                     ${graphRows}
                 </div>
 
+                <h4>Impact Analysis (Entire Graph)</h4>
+                <div class="card" style="font-size: 0.85em;">
+                    <div style="margin-bottom: 6px;">
+                        <strong>Verification Status:</strong> 
+                        <span class="badge ${impact.verification_status === 'FULLY_VERIFIED' ? '' : 'badge-orange'}">${impact.verification_status}</span>
+                    </div>
+                    <div style="font-size: 0.8em; color: var(--vscode-descriptionForeground); margin-bottom: 6px;">
+                        Context Completeness: <strong>${impact.context_completeness}</strong><br/>
+                        Graph: AVAILABLE &bull; Source: ${impact.source_verification} &bull; Tests: ${impact.test_verification}
+                    </div>
+                    <div style="margin-top: 6px;">
+                        <strong>Changed Areas:</strong> ${impact.changed_areas ? impact.changed_areas.join(', ') : 'None'}<br/>
+                        <strong>Affected Functions:</strong> <code>${impact.affected_functions ? impact.affected_functions.join(', ') : 'None'}</code><br/>
+                        <strong>Callers / Dependents:</strong> <code>${impact.callers ? impact.callers.join(', ') : 'None'}</code><br/>
+                        <strong>Related Tests:</strong> <code>${impact.related_tests ? impact.related_tests.join(', ') : 'None'}</code>
+                    </div>
+                    <div style="margin-top: 6px; font-style: italic; font-size: 0.8em;">
+                        "${impact.analysis_conclusion}"
+                    </div>
+                </div>
+
+                <h4>Commits & Development History</h4>
                 <!-- DEVELOPER HANDOFF BRIEFING -->
                 <h4>🤝 Developer Handoff Package</h4>
                 <div class="card" style="font-size: 0.85em;">

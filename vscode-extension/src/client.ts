@@ -66,6 +66,25 @@ export interface HandoffItem {
     recommended_next_action: string;
 }
 
+export interface ImpactAnalysisItem {
+    checkpoint_id: string;
+    commit_sha: string;
+    changed_areas: string[];
+    affected_files: string[];
+    affected_functions: string[];
+    callers: string[];
+    dependents: string[];
+    related_routes: string[];
+    related_tests: string[];
+    risks: string[];
+    graph_findings: GraphFindingItem[];
+    source_verification: string;
+    test_verification: string;
+    context_completeness: string; // "COMPLETE" | "INCOMPLETE" | "REDACTED" | "UNAVAILABLE"
+    verification_status: string;  // "PARTIALLY_VERIFIED" | "FULLY_VERIFIED"
+    available_evidence: string[];
+    missing_evidence: string[];
+    analysis_conclusion: string;
 export interface EvidenceItem {
     available: boolean;
     summary: string;
@@ -130,6 +149,10 @@ export class CheckpointApiClient {
 
     public async getGraphFindings(repoId: string = 'repo-cli-btw'): Promise<GraphFindingItem[]> {
         return this.fetchJson<GraphFindingItem[]>(`/api/repositories/${repoId}/graph`);
+    }
+
+    public async getImpactAnalysis(repoId: string = 'repo-cli-btw', sha: string = '', checkpointId: string = ''): Promise<ImpactAnalysisItem> {
+        return this.fetchJson<ImpactAnalysisItem>(`/api/repositories/${repoId}/impact?sha=${sha}&checkpoint_id=${checkpointId}`);
     }
 
     public async getHandoff(repoId: string = 'repo-cli-btw'): Promise<HandoffItem> {

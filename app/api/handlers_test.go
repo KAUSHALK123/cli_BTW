@@ -43,6 +43,33 @@ func TestCommitsHandler_List(t *testing.T) {
 	}
 }
 
+func TestRepositoriesHandler_Endpoints(t *testing.T) {
+	handler := NewAPIHandler(nil)
+	tests := []struct {
+		name     string
+		path     string
+		wantCode int
+	}{
+		{"List Repositories", "/api/repositories", http.StatusOK},
+		{"Single Repository", "/api/repositories/repo-cli-btw", http.StatusOK},
+		{"Checkpoints Endpoint", "/api/repositories/repo-cli-btw/checkpoints", http.StatusOK},
+		{"Requirements Endpoint", "/api/repositories/repo-cli-btw/requirements", http.StatusOK},
+		{"Graph Endpoint", "/api/repositories/repo-cli-btw/graph", http.StatusOK},
+		{"Handoff Endpoint", "/api/repositories/repo-cli-btw/handoff", http.StatusOK},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			req := httptest.NewRequest("GET", tt.path, nil)
+			rec := httptest.NewRecorder()
+			handler.RepositoriesHandler(rec, req)
+			if rec.Code != tt.wantCode {
+				t.Errorf("expected status %d, got %d", tt.wantCode, rec.Code)
+			}
+		})
+	}
+}
+
 func TestCommitsHandler_Context_Available(t *testing.T) {
 	handler := NewAPIHandler(nil)
 	req := httptest.NewRequest("GET", "/api/repositories/repo-cli-btw/commits/3dbdf8b83c39/context", nil)
