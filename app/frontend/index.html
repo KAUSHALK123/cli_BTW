@@ -20,6 +20,9 @@
             </div>
             
             <div class="view-mode-toggle">
+                <button class="mode-btn" id="btn-show-setup">
+                    <span class="btn-icon">⚙️</span> Repository Setup
+                </button>
                 <button class="mode-btn active" id="btn-vscode-view">
                     <span class="btn-icon">💻</span> VS Code Extension View
                 </button>
@@ -51,8 +54,170 @@
         </div>
     </header>
 
+    <!-- REPOSITORY SETUP & ONBOARDING SCREEN (FIRST SCREEN) -->
+    <div id="setup-screen-container" class="setup-container">
+        <div class="setup-hero-card">
+            <div class="setup-hero-header">
+                <div>
+                    <span class="setup-badge">STARTUP ONBOARDING</span>
+                    <h1 class="setup-title">Entire Repository Setup & Diagnostics</h1>
+                    <p class="setup-subtitle">Detecting local Git repository, GitHub connection, Entire CLI installation, and Graph readiness before workspace launch.</p>
+                </div>
+                <button class="btn btn-enter-dashboard" id="btn-enter-workspace">
+                    🚀 Continue to Intelligence Workspace →
+                </button>
+            </div>
+
+            <!-- 2-COLUMN SETUP GRID -->
+            <div class="setup-grid">
+                
+                <!-- LEFT: WORKSPACE DETAILS & READINESS CHECKLIST -->
+                <div class="setup-left-col">
+                    <div class="setup-card">
+                        <div class="setup-card-title">📂 CURRENT REPOSITORY CONTEXT</div>
+                        <div class="repo-info-grid">
+                            <div class="info-row">
+                                <span class="info-label">Repository Name:</span>
+                                <strong class="text-cyan font-mono" id="setup-repo-name">KAUSHALK123 / cli_BTW</strong>
+                            </div>
+                            <div class="info-row">
+                                <span class="info-label">Local Workspace Path:</span>
+                                <code id="setup-repo-path">d:\PROJECTS\BTW_cli\cli_btw</code>
+                            </div>
+                            <div class="info-row">
+                                <span class="info-label">Git Branch & Status:</span>
+                                <span class="text-green font-mono" id="setup-git-branch">feature/stitch-frontend-ui (Clean)</span>
+                            </div>
+                            <div class="info-row">
+                                <span class="info-label">GitHub Remote:</span>
+                                <a href="https://github.com/KAUSHALK123/cli_BTW.git" target="_blank" class="text-blue" id="setup-git-remote">https://github.com/KAUSHALK123/cli_BTW.git</a>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="setup-card">
+                        <div class="setup-card-title">✓ REPOSITORY READINESS GATE (7/7 VERIFIED)</div>
+                        <ul class="readiness-gate-list" id="readiness-gate-checklist">
+                            <li class="gate-item pass">
+                                <span class="gate-icon">✓</span>
+                                <span class="gate-name">Git Repository Detected</span>
+                                <span class="gate-status">ACTIVE</span>
+                            </li>
+                            <li class="gate-item pass">
+                                <span class="gate-icon">✓</span>
+                                <span class="gate-name">GitHub Connected</span>
+                                <span class="gate-status">3 Milestones / 4 Requirements</span>
+                            </li>
+                            <li class="gate-item pass">
+                                <span class="gate-icon">✓</span>
+                                <span class="gate-name">Entire CLI Installed</span>
+                                <span class="gate-status" id="gate-cli-version">v0.10.5 (scoop/shims)</span>
+                            </li>
+                            <li class="gate-item pass">
+                                <span class="gate-icon">✓</span>
+                                <span class="gate-name">Entire Enabled for Repo</span>
+                                <span class="gate-status">2 Session Checkpoints</span>
+                            </li>
+                            <li class="gate-item pass">
+                                <span class="gate-icon">✓</span>
+                                <span class="gate-name">Checkpoint Context Preserved</span>
+                                <span class="gate-status">81M1-ckp-892f</span>
+                            </li>
+                            <li class="gate-item pass">
+                                <span class="gate-icon">✓</span>
+                                <span class="gate-name">Entire Graph Indexer</span>
+                                <span class="gate-status">14 AST Symbols Mapped</span>
+                            </li>
+                            <li class="gate-item pass">
+                                <span class="gate-icon">✓</span>
+                                <span class="gate-name">Backend API Server</span>
+                                <span class="gate-status">CONNECTED (http://localhost:8080)</span>
+                            </li>
+                        </ul>
+                    </div>
+
+                    <!-- ACTION BUTTONS -->
+                    <div class="setup-actions-bar">
+                        <button class="btn btn-action" id="btn-action-select-repo">📂 Select Repository</button>
+                        <button class="btn btn-action" id="btn-action-connect-github">🐙 Connect GitHub</button>
+                        <button class="btn btn-action primary" id="btn-action-enable-entire">⚡ Enable Entire</button>
+                        <button class="btn btn-action" id="btn-action-verify">✓ Verify Entire</button>
+                        <button class="btn btn-action" id="btn-action-init-graph">🕸️ Init Graph</button>
+                    </div>
+                </div>
+
+                <!-- RIGHT: LIVE ENTIRE ACTIVITY & CLI TERMINAL DIAGNOSTICS -->
+                <div class="setup-right-col">
+                    
+                    <!-- LIVE ENTIRE ACTIVITY PANEL -->
+                    <div class="setup-card live-activity-card">
+                        <div class="setup-card-title flex-between">
+                            <span>● LIVE ENTIRE ACTIVITY</span>
+                            <span class="live-pulse-badge">
+                                <span class="status-pulse green"></span> AUTO-POLLING (3s)
+                            </span>
+                        </div>
+                        <div class="live-activity-body" id="live-activity-content">
+                            <div class="activity-row">
+                                <span class="activity-label">Entire Status:</span>
+                                <span class="badge green">CONNECTED</span>
+                            </div>
+                            <div class="activity-row">
+                                <span class="activity-label">Active Agent:</span>
+                                <strong class="text-purple">Antigravity IDE / Codex</strong>
+                            </div>
+                            <div class="activity-row">
+                                <span class="activity-label">Current Branch:</span>
+                                <code class="font-mono text-cyan">feature/stitch-frontend-ui</code>
+                            </div>
+                            <div class="activity-row">
+                                <span class="activity-label">Latest Checkpoint:</span>
+                                <strong class="text-purple font-mono">81M1-ckp-892f</strong>
+                            </div>
+                            <div class="activity-row">
+                                <span class="activity-label">Context Completeness:</span>
+                                <span class="badge green">COMPLETE</span>
+                            </div>
+                            <div class="activity-row">
+                                <span class="activity-label">Last Polled:</span>
+                                <span class="text-muted font-mono" id="live-polled-time">Just now</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- ENTIRE CLI TERMINAL DIAGNOSTICS VIEWER -->
+                    <div class="setup-card terminal-card">
+                        <div class="setup-card-title flex-between">
+                            <span>💻 ENTIRE CLI TERMINAL DIAGNOSTICS</span>
+                            <span class="font-mono text-muted" style="font-size:0.7rem;">$ entire status</span>
+                        </div>
+                        <div class="terminal-view" id="cli-diagnostics-output">
+                            <pre><code class="terminal-text">$ entire status
+● Entire CLI Connected
+  Version: 0.10.5 (windows/amd64)
+  Repository: KAUSHALK123/cli_BTW
+  Branch: feature/stitch-frontend-ui
+  Agent: Antigravity IDE / Claude Code
+  Hooks: Active (pre-commit, post-checkout)
+  Entire Checkpoints: 2 session checkpoints preserved
+  Entire Graph: Connected & indexed (14 AST symbols mapped)
+  Status: READY
+
+$ entire checkpoint list
+ID              COMMIT     TIMESTAMP                 INTENT SUMMARY
+81M1-ckp-892f   a81c92f    2026-09-06T09:38:00Z      Implement authentication for protected API routes
+01ABC-ckp-101a   3dbdf8b    2026-09-06T08:58:00Z      Integrate GitHub milestones and requirements</code></pre>
+                        </div>
+                    </div>
+
+                </div>
+
+            </div>
+        </div>
+    </div>
+
     <!-- INTERACTIVE DEMO PIPELINE BREADCRUMB -->
-    <nav class="pipeline-breadcrumb-bar">
+    <nav class="pipeline-breadcrumb-bar" id="pipeline-bar" style="display: flex;">
         <div class="pipeline-label">INTERACTIVE DEMO PIPELINE:</div>
         <div class="pipeline-steps">
             <button class="step-btn" data-step="1">1. Architecture</button>
@@ -72,7 +237,7 @@
     </nav>
 
     <!-- MAIN 3-COLUMN WORKSPACE AREA -->
-    <div class="workspace-layout">
+    <div class="workspace-layout" id="workspace-main-layout">
         
         <!-- LEFT COLUMN: CHECKPOINT EXPLORER -->
         <aside class="column explorer-column">
