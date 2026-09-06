@@ -85,6 +85,32 @@ export interface ImpactAnalysisItem {
     available_evidence: string[];
     missing_evidence: string[];
     analysis_conclusion: string;
+export interface EvidenceItem {
+    available: boolean;
+    summary: string;
+    details?: string;
+}
+
+export interface CheckpointIntelligenceItem {
+    checkpoint_id: string;
+    commit_sha: string;
+    short_sha: string;
+    requirement_id?: string;
+    requirement_title?: string;
+    intent: string;
+    implemented: string[];
+    incomplete: string[];
+    evidence: {
+        checkpoint: EvidenceItem;
+        commit: EvidenceItem;
+        source: EvidenceItem;
+        tests: EvidenceItem;
+        graph: EvidenceItem;
+    };
+    next_action: string;
+    context_completeness: string;
+    verification_status: string;
+    generated_at: string;
 }
 
 export class CheckpointApiClient {
@@ -92,6 +118,13 @@ export class CheckpointApiClient {
 
     public async getReadiness(): Promise<ReadinessStatus> {
         return this.fetchJson<ReadinessStatus>('/api/readiness');
+    }
+
+    public async getIntelligence(sha?: string, repoId: string = 'repo-cli-btw'): Promise<CheckpointIntelligenceItem> {
+        if (sha) {
+            return this.fetchJson<CheckpointIntelligenceItem>(`/api/repositories/${repoId}/commits/${sha}/intelligence`);
+        }
+        return this.fetchJson<CheckpointIntelligenceItem>(`/api/repositories/${repoId}/intelligence`);
     }
 
     public async enableEntire(): Promise<{ status: string; message: string }> {
