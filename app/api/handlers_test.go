@@ -1,4 +1,4 @@
-package api_test
+package api
 
 import (
 	"encoding/json"
@@ -6,12 +6,11 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/entireio/cli/app/api"
 	"github.com/entireio/cli/app/models"
 )
 
 func TestHealthHandler(t *testing.T) {
-	handler := api.NewAPIHandler(nil)
+	handler := NewAPIHandler(nil)
 	req := httptest.NewRequest("GET", "/api/health", nil)
 	w := httptest.NewRecorder()
 
@@ -23,7 +22,7 @@ func TestHealthHandler(t *testing.T) {
 }
 
 func TestCommitsHandler_List(t *testing.T) {
-	handler := api.NewAPIHandler(nil)
+	handler := NewAPIHandler(nil)
 	req := httptest.NewRequest("GET", "/api/repositories/repo-cli-btw/commits", nil)
 	w := httptest.NewRecorder()
 
@@ -44,7 +43,7 @@ func TestCommitsHandler_List(t *testing.T) {
 }
 
 func TestRepositoriesHandler_Endpoints(t *testing.T) {
-	handler := api.NewAPIHandler(nil)
+	handler := NewAPIHandler(nil)
 	tests := []struct {
 		name     string
 		path     string
@@ -71,7 +70,7 @@ func TestRepositoriesHandler_Endpoints(t *testing.T) {
 }
 
 func TestCommitsHandler_Context_Available(t *testing.T) {
-	handler := api.NewAPIHandler(nil)
+	handler := NewAPIHandler(nil)
 	req := httptest.NewRequest("GET", "/api/repositories/repo-cli-btw/commits/3dbdf8b83c39/context", nil)
 	w := httptest.NewRecorder()
 
@@ -96,7 +95,7 @@ func TestCommitsHandler_Context_Available(t *testing.T) {
 }
 
 func TestCommitsHandler_Context_Unavailable(t *testing.T) {
-	handler := api.NewAPIHandler(nil)
+	handler := NewAPIHandler(nil)
 	req := httptest.NewRequest("GET", "/api/repositories/repo-cli-btw/commits/a1b2c3d4e5f6/context", nil)
 	w := httptest.NewRecorder()
 
@@ -121,6 +120,36 @@ func TestCommitsHandler_Context_Unavailable(t *testing.T) {
 
 	if devCtx.MissingContextReason == "" {
 		t.Errorf("Expected explicit missing context reason")
+	}
+}
+
+func TestRepositoriesHandler(t *testing.T) {
+	handler := NewAPIHandler(nil)
+
+	tests := []struct {
+		name     string
+		path     string
+		wantCode int
+	}{
+		{"List Repositories", "/api/repositories", http.StatusOK},
+		{"Single Repository", "/api/repositories/repo-kaushalk123-cli-btw", http.StatusOK},
+		{"Checkpoints Endpoint", "/api/repositories/repo-kaushalk123-cli-btw/checkpoints", http.StatusOK},
+		{"Requirements Endpoint", "/api/repositories/repo-kaushalk123-cli-btw/requirements", http.StatusOK},
+		{"Graph Endpoint", "/api/repositories/repo-kaushalk123-cli-btw/graph", http.StatusOK},
+		{"Handoff Endpoint", "/api/repositories/repo-kaushalk123-cli-btw/handoff", http.StatusOK},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			req := httptest.NewRequest("GET", tt.path, nil)
+			rec := httptest.NewRecorder()
+
+			handler.RepositoriesHandler(rec, req)
+
+			if rec.Code != tt.wantCode {
+				t.Errorf("expected code %d for %s, got %d", tt.wantCode, tt.path, rec.Code)
+			}
+		})
 	}
 }
 
