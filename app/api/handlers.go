@@ -310,6 +310,18 @@ func (h *APIHandler) RepositoriesHandler(w http.ResponseWriter, r *http.Request)
 		}
 		json.NewEncoder(w).Encode(reqs)
 
+	case "impact":
+		// GET /api/repositories/:id/impact
+		commitSHA := r.URL.Query().Get("sha")
+		cpID := r.URL.Query().Get("checkpoint_id")
+		impact, err := h.deps.GraphProvider.AnalyzeImpact(r.Context(), repoID, commitSHA, cpID)
+		if err != nil {
+			slog.Error("Failed to analyze graph impact", "repoID", repoID, "error", err)
+			WriteAPIError(w, http.StatusInternalServerError, "GRAPH_IMPACT_FAILED", err.Error())
+			return
+		}
+		json.NewEncoder(w).Encode(impact)
+
 	case "graph":
 		// GET /api/repositories/:id/graph
 		findings, err := h.deps.GraphProvider.GetGraphFindings(r.Context(), repoID)

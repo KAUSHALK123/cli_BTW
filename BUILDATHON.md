@@ -85,11 +85,12 @@ The application consists of three integrated, clean layers:
   - `UNAVAILABLE`: Commit has no Checkpoint context (`[Git-Only / Checkpoint Unavailable]`).
   - Missing or incomplete Checkpoints explicitly return `MissingContextReason` instead of fabricating data.
 
-## Entire Graph findings and verification
+## Entire Graph Findings & Impact Analysis
 Entire Graph structural findings are integrated to verify symbol definitions, call relationships, and semantic diff impact:
-- Indexed AST definitions and call-chains across modified modules.
-- Impact Analysis: 0 breaking API schema changes detected.
-- Verified test assertions match modified business logic.
+- **AST Impact Analysis**: `GET /api/repositories/:id/impact` evaluates changed areas, affected functions, callers/dependents, related routes, and unit tests (`app/models/graph.go`, `app/providers/graph_provider.go`).
+- **Context Completeness**: Explicitly tracks `COMPLETE`, `INCOMPLETE`, `REDACTED`, and `UNAVAILABLE` context states.
+- **Verification Levels**: Distinguishes `GRAPH_FINDING`, `SOURCE_VERIFIED`, `TEST_VERIFIED`, and `UNVERIFIED` evidence levels.
+- **Redacted Checkpoint Safeguard**: When raw prompts are missing or redacted, the system assesses impact from source & AST graph evidence but sets status to `PARTIALLY_VERIFIED` with `MissingEvidence: ["Original Prompt Transcript"]`. Original intent is never claimed as complete without actual transcript evidence.
 
 ## Privacy Boundary & Curveball Adaptation
 - **Strict Privacy Rule**: Raw prompts, transcripts, PII, and credentials are **never** transmitted to external services.
